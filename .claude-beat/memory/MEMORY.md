@@ -13,14 +13,17 @@
 - Income tracking: source field, dedicated UI, recurring support (PR #27 merged)
 - Dashboard home page: balance overview, accounts grid, recent transactions (PR #29 merged)
 - Scheduled transfers API: data model + CRUD API (PR #33 merged)
-- Scheduled transfers UI: list page, create/edit forms, card component (PR #34 open)
+- Scheduled transfers UI: list page, create/edit forms, card component (PR #34 merged)
+- Scheduled transfers execution: batch + single execute endpoints (PR #35 open)
+- Shared exchange rate utility at `src/lib/exchange-rate.ts`
+- Core execution logic at `src/lib/execute-scheduled-transfer.ts`
 - Nav has Accounts, Transactions, Income, Transfer, Schedules links
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
 - Shared schedule utilities at `src/lib/schedule.ts`
 - Build passes, lint passes
 
 ## Open PRs
-- #34: Scheduled transfers list and create/edit UI (feat/scheduled-transfers-ui)
+- #35: Scheduled transfers execution engine (feat/scheduled-transfers-execution)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
@@ -30,14 +33,14 @@
 - #4: Income tracking (PR #27 merged)
 - #28: Dashboard home page (PR #29 merged)
 - #30: Scheduled transfers data model + CRUD API (PR #33 merged)
+- #31: Scheduled transfers list and create/edit UI (PR #34 merged)
 
 ## Open Issues — Scheduled Transfers (#3) Sub-issues
-- #31: Scheduled transfers list and create/edit UI (P0, PR #34 open)
-- #32: Scheduled transfers execution engine and history (P0, depends on #30)
+- #32: Scheduled transfers execution engine (P0, PR #35 open)
 
 ## Open Issues — Other
 - #1: Multi-account management (partially done — CRUD complete, net worth #21 remains)
-- #3: Scheduled transfers (P0, parent — decomposed into #30, #31, #32)
+- #3: Scheduled transfers (P0, parent — decomposed into #30, #31, #32; close after #35 merges)
 - #5-#10: P0 features (AI categorization, receipts, web UI, auth, shared spaces, Telegram bot)
 - #7: Web interface / dashboard (partially done — basic dashboard merged)
 - #11-#14: P1 features (analytics, price stats, notifications, AI insights)
@@ -53,7 +56,7 @@
 - agent-browser not available (no Chromium on ARM64)
 
 ## Next Session Priority
-1. Merge PR #34 if no objections (1 session elapsed)
-2. Pick up scheduled transfers execution engine (#32, P0)
-3. After #32, close parent issue #3 (Scheduled Transfers complete)
-4. Decompose larger P0 features (auth #8, shared spaces #9, Telegram #10) before implementation
+1. Merge PR #35 if no objections (1 session elapsed)
+2. Close parent issue #3 (Scheduled Transfers complete)
+3. Decompose next P0 feature for implementation (AI categorization #5, auth #8, or receipt scanning #6)
+4. Decompose larger P0 features (shared spaces #9, Telegram #10) before implementation
