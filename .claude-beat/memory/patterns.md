@@ -20,3 +20,7 @@
 - Prisma client imports from `@prisma/client` (v6 standard)
 - Use `npx prisma generate` after schema changes
 - Build: `npm run build`, Lint: `npm run lint`
+- ARM64 Linux — no Chrome for Testing, no sudo access for apt install
+- Browser testing via agent-browser not available (no Chromium installed)
+- Next.js 16 route handlers: `params` is a Promise, must `await params` in dynamic routes
+- Temp auth: `getCurrentUser()` in `src/lib/auth.ts` creates/returns a seed user
