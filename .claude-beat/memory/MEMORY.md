@@ -12,14 +12,15 @@
 - Transfers between accounts: cross-currency with 3 rate modes, exchange rate API (PR #26 merged)
 - Income tracking: source field, dedicated UI, recurring support (PR #27 merged)
 - Dashboard home page: balance overview, accounts grid, recent transactions (PR #29 merged)
-- Scheduled transfers: data model + CRUD API complete (PR #33 open)
-- Nav has Accounts, Transactions, Income, Transfer links
+- Scheduled transfers API: data model + CRUD API (PR #33 merged)
+- Scheduled transfers UI: list page, create/edit forms, card component (PR #34 open)
+- Nav has Accounts, Transactions, Income, Transfer, Schedules links
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
 - Shared schedule utilities at `src/lib/schedule.ts`
 - Build passes, lint passes
 
 ## Open PRs
-- #33: Scheduled transfers data model and CRUD API (feat/scheduled-transfers-api)
+- #34: Scheduled transfers list and create/edit UI (feat/scheduled-transfers-ui)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
@@ -28,10 +29,10 @@
 - #2: Transfers between accounts (PR #26 merged)
 - #4: Income tracking (PR #27 merged)
 - #28: Dashboard home page (PR #29 merged)
-- #30: Scheduled transfers data model + CRUD API (PR #33)
+- #30: Scheduled transfers data model + CRUD API (PR #33 merged)
 
 ## Open Issues — Scheduled Transfers (#3) Sub-issues
-- #31: Scheduled transfers list and create/edit UI (P0, depends on #30)
+- #31: Scheduled transfers list and create/edit UI (P0, PR #34 open)
 - #32: Scheduled transfers execution engine and history (P0, depends on #30)
 
 ## Open Issues — Other
@@ -44,7 +45,7 @@
 - #21: Net worth aggregation (P1)
 
 ## Important Notes
-- Disk space is VERY limited (~150MB free) — always clean cache before installs
+- Disk space is comfortable (~34GB free)
 - Prisma v6 used (not v7) because v7 requires driver adapters
 - Git remote has PAT embedded in URL
 - Docker daemon (dockerd) not available in this environment — cannot run cb-deploy
@@ -52,7 +53,7 @@
 - agent-browser not available (no Chromium on ARM64)
 
 ## Next Session Priority
-1. Merge PR #33 if no objections (1 session elapsed)
-2. Pick up scheduled transfers UI (#31, P0)
-3. After #31, pick up execution engine (#32, P0) to complete scheduled transfers
+1. Merge PR #34 if no objections (1 session elapsed)
+2. Pick up scheduled transfers execution engine (#32, P0)
+3. After #32, close parent issue #3 (Scheduled Transfers complete)
 4. Decompose larger P0 features (auth #8, shared spaces #9, Telegram #10) before implementation
