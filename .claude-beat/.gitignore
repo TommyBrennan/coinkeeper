@@ -1,0 +1,6 @@
+# Raw Claude CLI output (JSON stream)
+logs/*.log
+
+# Binary assets
+logs/screenshots/
+logs/demos/
