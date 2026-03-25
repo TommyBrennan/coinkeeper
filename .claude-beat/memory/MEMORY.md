@@ -7,19 +7,25 @@
 - **Tech**: Next.js 16, React 19, TypeScript, Tailwind CSS v4, Prisma v6, SQLite
 
 ## Current State
-- Repository bootstrapped with initial commit on `main`
-- Next.js app with Prisma schema (User, Account, Transaction, Category, Receipt, RecurringRule, Space, SpaceMember, Credential)
+- Account system complete: CRUD API, list page, create/edit forms (PR #22, #23 merged)
+- Transaction system: CRUD API with atomic balance updates, categories seeding, list/form UI (PR #25 open)
+- Nav has Accounts and Transactions links
+- 11 default categories auto-seeded on first API call
 - Build passes, lint passes
-- Landing page with "Under development" badge
-- 18 issues created from PRD, all on project board
 
 ## Open PRs
-- None
+- #25: Transaction CRUD API and list page (feat/transaction-crud-list)
+
+## Closed Issues
+- #19: Account CRUD API and list page
+- #20: Account create/edit form
 
 ## Open Issues
 - #1-#10: P0 features (multi-account, transfers, scheduled transfers, income, AI categorization, receipts, web UI, auth, shared spaces, Telegram bot)
 - #11-#14: P1 features (analytics, price stats, notifications, AI insights)
 - #15-#18: P2 features (NLP entry, import/export, multi-currency aggregation, custom reports)
+- #21: Net worth aggregation (P1)
+- #24: Transaction CRUD API and list page (P0, in progress via PR #25)
 
 ## Important Notes
 - Disk space is very limited (~500MB free) — be careful with npm installs
@@ -28,5 +34,6 @@
 - No deployment infrastructure yet
 
 ## Next Session Priority
-1. Pick up #1 (multi-account management) — decompose into sub-issues
-2. Or #8 (authentication) as foundation for all user-facing features
+1. Merge PR #25 if no objections
+2. Pick up next P0: transfers (#2), dashboard (#7), or decompose larger features
+3. Consider #8 (auth) as it blocks multi-user features
