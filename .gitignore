@@ -47,5 +47,8 @@ next-env.d.ts
 # prisma
 /src/generated/prisma
 
+# Uploaded files
+/public/uploads/
+
 # Claude skills (installed globally, not per-project)
 .claude/skills/
