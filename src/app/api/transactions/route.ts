@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
     source,
     isRecurring,
     recurringFrequency,
+    receiptId,
   } = body;
 
   // Validate type
@@ -214,6 +215,7 @@ export async function POST(request: NextRequest) {
         toAccountId: toAccountId || null,
         exchangeRate: computedExchangeRate,
         toAmount: computedToAmount,
+        receiptId: receiptId || null,
         isRecurring: !!isRecurring,
         recurringId,
       },
