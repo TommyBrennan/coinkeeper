@@ -60,6 +60,9 @@ export async function POST(request: NextRequest) {
     toAccountId,
     exchangeRate,
     toAmount,
+    source,
+    isRecurring,
+    recurringFrequency,
   } = body;
 
   // Validate type
@@ -169,6 +172,32 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  // Create recurring rule if needed
+  let recurringId: string | null = null;
+  if (isRecurring && recurringFrequency) {
+    const txnDate = date ? new Date(date) : new Date();
+    const nextExecution = new Date(txnDate);
+    if (recurringFrequency === "daily") {
+      nextExecution.setDate(nextExecution.getDate() + 1);
+    } else if (recurringFrequency === "weekly") {
+      nextExecution.setDate(nextExecution.getDate() + 7);
+    } else {
+      // monthly
+      nextExecution.setMonth(nextExecution.getMonth() + 1);
+    }
+
+    const rule = await db.recurringRule.create({
+      data: {
+        frequency: recurringFrequency,
+        interval: 1,
+        nextExecution,
+        lastExecution: txnDate,
+        isActive: true,
+      },
+    });
+    recurringId = rule.id;
+  }
+
   // Create transaction and update account balance atomically
   const transaction = await db.$transaction(async (tx) => {
     const txn = await tx.transaction.create({
@@ -178,12 +207,15 @@ export async function POST(request: NextRequest) {
         amount,
         currency: currency || "USD",
         description: description?.trim() || null,
+        source: source?.trim() || null,
         date: date ? new Date(date) : new Date(),
         categoryId: categoryId || null,
         fromAccountId: fromAccountId || null,
         toAccountId: toAccountId || null,
         exchangeRate: computedExchangeRate,
         toAmount: computedToAmount,
+        isRecurring: !!isRecurring,
+        recurringId,
       },
       include: {
         category: true,

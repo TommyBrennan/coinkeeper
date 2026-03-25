@@ -96,6 +96,7 @@ model Transaction {
   amount      Float
   currency    String   @default("USD")
   description String?
+  source      String?    // income source (e.g. employer, client name)
   date        DateTime @default(now())
   categoryId  String?
   fromAccountId String?
