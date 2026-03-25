@@ -12,18 +12,19 @@
 - Transfers between accounts: cross-currency with 3 rate modes, exchange rate API (PR #26 merged)
 - Income tracking: source field, dedicated UI, recurring support (PR #27 merged)
 - Dashboard home page: balance overview, accounts grid, recent transactions (PR #29 merged)
-- Scheduled transfers API: data model + CRUD API (PR #33 merged)
-- Scheduled transfers UI: list page, create/edit forms, card component (PR #34 merged)
-- Scheduled transfers execution: batch + single execute endpoints (PR #35 open)
+- Scheduled transfers: data model, CRUD API, UI, execution engine — all complete (#3 closed)
+- AI categorization API: Claude integration, POST /api/categorize endpoint (PR #39 open)
+- Next.js standalone output enabled for Docker builds
+- Dockerfile and .dockerignore committed
 - Shared exchange rate utility at `src/lib/exchange-rate.ts`
 - Core execution logic at `src/lib/execute-scheduled-transfer.ts`
+- AI categorization at `src/lib/categorize.ts`
 - Nav has Accounts, Transactions, Income, Transfer, Schedules links
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
-- Shared schedule utilities at `src/lib/schedule.ts`
 - Build passes, lint passes
 
 ## Open PRs
-- #35: Scheduled transfers execution engine (feat/scheduled-transfers-execution)
+- #39: AI categorization API (feat/ai-categorization-api)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
@@ -34,15 +35,22 @@
 - #28: Dashboard home page (PR #29 merged)
 - #30: Scheduled transfers data model + CRUD API (PR #33 merged)
 - #31: Scheduled transfers list and create/edit UI (PR #34 merged)
+- #32: Scheduled transfers execution engine (PR #35 merged)
+- #3: Scheduled transfers (parent — all sub-issues complete)
 
-## Open Issues — Scheduled Transfers (#3) Sub-issues
-- #32: Scheduled transfers execution engine (P0, PR #35 open)
+## Open Issues — AI Categorization (#5) Sub-issues
+- #36: AI categorization API endpoint (PR #39 open)
+- #37: Auto-suggest in transaction form UI
+- #38: Category normalization and dedup
 
 ## Open Issues — Other
 - #1: Multi-account management (partially done — CRUD complete, net worth #21 remains)
-- #3: Scheduled transfers (P0, parent — decomposed into #30, #31, #32; close after #35 merges)
-- #5-#10: P0 features (AI categorization, receipts, web UI, auth, shared spaces, Telegram bot)
-- #7: Web interface / dashboard (partially done — basic dashboard merged)
+- #5: AI-powered expense categorization (P0, parent — decomposed into #36, #37, #38)
+- #6: Receipt photo expense tracking (P0)
+- #7: Web interface / dashboard (P0, partially done — basic dashboard merged)
+- #8: Authentication / WebAuthn (P0)
+- #9: Shared spaces (P0)
+- #10: Telegram bot interface (P0)
 - #11-#14: P1 features (analytics, price stats, notifications, AI insights)
 - #15-#18: P2 features (NLP entry, import/export, multi-currency aggregation, custom reports)
 - #21: Net worth aggregation (P1)
@@ -54,9 +62,12 @@
 - Docker daemon (dockerd) not available in this environment — cannot run cb-deploy
 - Exchange rate API uses https://api.exchangerate-api.com/v4/latest/{currency} (free, no key)
 - agent-browser not available (no Chromium on ARM64)
+- AGENT_NAME env var not set (needed for cb-deploy)
+- GitHub token lacks read:org scope (can't add to project board via gh CLI)
+- ANTHROPIC_API_KEY needed for AI categorization to work (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #35 if no objections (1 session elapsed)
-2. Close parent issue #3 (Scheduled Transfers complete)
-3. Decompose next P0 feature for implementation (AI categorization #5, auth #8, or receipt scanning #6)
-4. Decompose larger P0 features (shared spaces #9, Telegram #10) before implementation
+1. Merge PR #39 if no objections (1 session elapsed)
+2. Implement #37 (AI auto-suggest in transaction form UI)
+3. Check if ANTHROPIC_API_KEY is available; if not, create human-request issue
+4. Consider next P0: receipt scanning (#6) or auth (#8)
