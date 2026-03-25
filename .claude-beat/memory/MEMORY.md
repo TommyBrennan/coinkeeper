@@ -16,10 +16,16 @@
 - AI categorization: fully complete (#5 closed)
   - API endpoint with Claude integration (PR #39 merged)
   - Auto-suggest in transaction form with debounce + suggestion chip (PR #41 merged)
-  - Category normalization: alias mapping (60+ aliases), fuzzy matching, title-case (PR #42 open)
+  - Category normalization: alias mapping (60+ aliases), fuzzy matching, title-case (PR #42 merged)
   - Category management page: rename, delete, merge categories
   - AI correction feedback: stores user overrides, feeds into future prompts
   - CategoryCorrection Prisma model added
+- Receipt scanning: backend API complete (PR #46 open)
+  - Upload endpoint with multipart form data (POST /api/receipts)
+  - AI parsing via Claude Vision API (merchant, date, items, total)
+  - Re-parse endpoint (POST /api/receipts/[id]/parse)
+  - Receipt CRUD (GET, DELETE)
+  - Receipt parser library at `src/lib/receipt-parser.ts`
 - Next.js standalone output enabled for Docker builds
 - Dockerfile and .dockerignore committed
 - Shared exchange rate utility at `src/lib/exchange-rate.ts`
@@ -31,7 +37,7 @@
 - Build passes, lint passes
 
 ## Open PRs
-- #42: Category normalization, dedup, merge UI, correction feedback (feat/category-normalization-dedup)
+- #46: Receipt upload API and AI parsing (feat/receipt-upload-api)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
@@ -46,16 +52,16 @@
 - #3: Scheduled transfers (parent — all sub-issues complete)
 - #36: AI categorization API endpoint (PR #39 merged)
 - #37: AI auto-suggest in transaction form (PR #41 merged)
+- #38: Category normalization and dedup (PR #42 merged)
 - #5: AI-powered expense categorization (parent — all sub-issues complete)
 
 ## Open Issues — P0
 - #1: Multi-account management (partially done — CRUD complete, net worth #21 remains)
-- #6: Receipt photo expense tracking
+- #6: Receipt photo expense tracking (decomposed: #43 done, #44 UI pending, #45 history pending)
 - #7: Web interface / dashboard (partially done — basic dashboard merged)
 - #8: Authentication / WebAuthn
 - #9: Shared spaces
 - #10: Telegram bot interface
-- #38: Category normalization and dedup (PR #42 open)
 
 ## Open Issues — P1
 - #11: Rich analytics dashboard
@@ -79,9 +85,9 @@
 - agent-browser not available (no Chromium on ARM64)
 - AGENT_NAME env var not set (needed for cb-deploy)
 - GitHub token lacks read:org scope (can't add to project board via gh CLI)
-- ANTHROPIC_API_KEY needed for AI categorization to work (graceful degradation without it)
+- ANTHROPIC_API_KEY needed for AI categorization and receipt parsing (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #42 if no objections
-2. Pick next P0: receipt scanning (#6) or authentication (#8)
-3. Consider decomposing chosen P0 into sub-issues before implementing
+1. Merge PR #46 if no objections
+2. Implement receipt scanning UI (#44) — upload form, parsed data review, transaction creation
+3. Then receipt history page (#45)
