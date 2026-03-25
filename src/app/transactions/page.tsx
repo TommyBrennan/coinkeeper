@@ -151,6 +151,8 @@ export default async function TransactionsPage() {
                       ...txn,
                       date: txn.date.toISOString(),
                       description: txn.description,
+                      exchangeRate: txn.exchangeRate,
+                      toAmount: txn.toAmount,
                       category: txn.category,
                       fromAccount: txn.fromAccount,
                       toAccount: txn.toAccount,

@@ -34,6 +34,12 @@ export function Nav() {
             Transactions
           </Link>
           <Link
+            href="/transfers/new"
+            className="px-3 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Transfer
+          </Link>
+          <Link
             href="/accounts"
             className="px-3 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >

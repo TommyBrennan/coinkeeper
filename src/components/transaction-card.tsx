@@ -25,6 +25,8 @@ interface Transaction {
   currency: string;
   description: string | null;
   date: string;
+  exchangeRate: number | null;
+  toAmount: number | null;
   category: TransactionCategory | null;
   fromAccount: TransactionAccount | null;
   toAccount: TransactionAccount | null;
@@ -72,6 +74,7 @@ export function TransactionCard({
 
   const isExpense = transaction.type === "expense";
   const isIncome = transaction.type === "income";
+  const isTransfer = transaction.type === "transfer";
   const account = isExpense
     ? transaction.fromAccount
     : transaction.toAccount;
@@ -85,30 +88,54 @@ export function TransactionCard({
       <div
         className="flex items-center justify-center w-9 h-9 rounded-lg shrink-0 text-sm"
         style={{
-          backgroundColor: transaction.category?.color
-            ? `${transaction.category.color}20`
-            : "rgb(243 244 246)",
-          color: transaction.category?.color || "rgb(107 114 128)",
+          backgroundColor: isTransfer
+            ? "rgb(219 234 254)"
+            : transaction.category?.color
+              ? `${transaction.category.color}20`
+              : "rgb(243 244 246)",
+          color: isTransfer
+            ? "rgb(37 99 235)"
+            : transaction.category?.color || "rgb(107 114 128)",
         }}
       >
-        {categoryIcon || (isIncome ? "\uD83D\uDCB0" : "\uD83D\uDCB8")}
+        {isTransfer
+          ? "\u21C4"
+          : categoryIcon || (isIncome ? "\uD83D\uDCB0" : "\uD83D\uDCB8")}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-            {transaction.description ||
-              transaction.category?.name ||
-              (isIncome ? "Income" : "Expense")}
+            {isTransfer
+              ? transaction.description || "Transfer"
+              : transaction.description ||
+                transaction.category?.name ||
+                (isIncome ? "Income" : "Expense")}
           </h3>
         </div>
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          {transaction.category?.name || "Uncategorized"}
-          {account && (
+          {isTransfer ? (
             <>
-              {" \u00B7 "}
-              {account.name}
+              {transaction.fromAccount?.name || "?"}
+              {" → "}
+              {transaction.toAccount?.name || "?"}
+              {transaction.exchangeRate &&
+                transaction.exchangeRate !== 1 && (
+                  <span className="ml-1 tabular-nums">
+                    @{transaction.exchangeRate.toFixed(4)}
+                  </span>
+                )}
+            </>
+          ) : (
+            <>
+              {transaction.category?.name || "Uncategorized"}
+              {account && (
+                <>
+                  {" · "}
+                  {account.name}
+                </>
+              )}
             </>
           )}
         </p>
@@ -116,18 +143,35 @@ export function TransactionCard({
 
       {/* Amount */}
       <div className="text-right shrink-0">
-        <p
-          className={`text-sm font-semibold tabular-nums ${
-            isExpense
-              ? "text-red-600 dark:text-red-400"
-              : isIncome
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-gray-900 dark:text-gray-100"
-          }`}
-        >
-          {isExpense ? "-" : "+"}
-          {formatMoney(transaction.amount, transaction.currency)}
-        </p>
+        {isTransfer ? (
+          <div>
+            <p className="text-sm font-semibold tabular-nums text-blue-600 dark:text-blue-400">
+              {formatMoney(transaction.amount, transaction.currency)}
+            </p>
+            {transaction.toAmount !== null &&
+              transaction.toAmount !== transaction.amount && (
+                <p className="text-xs tabular-nums text-gray-500 dark:text-gray-400">
+                  → {formatMoney(
+                    transaction.toAmount,
+                    transaction.toAccount?.currency || transaction.currency
+                  )}
+                </p>
+              )}
+          </div>
+        ) : (
+          <p
+            className={`text-sm font-semibold tabular-nums ${
+              isExpense
+                ? "text-red-600 dark:text-red-400"
+                : isIncome
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-gray-900 dark:text-gray-100"
+            }`}
+          >
+            {isExpense ? "-" : "+"}
+            {formatMoney(transaction.amount, transaction.currency)}
+          </p>
+        )}
       </div>
 
       {/* Delete button */}

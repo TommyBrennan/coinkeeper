@@ -58,6 +58,8 @@ export async function POST(request: NextRequest) {
     categoryId,
     fromAccountId,
     toAccountId,
+    exchangeRate,
+    toAmount,
   } = body;
 
   // Validate type
@@ -115,6 +117,57 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  if (type === "transfer") {
+    if (!fromAccountId || !toAccountId) {
+      return NextResponse.json(
+        { error: "Transfer requires both source and destination accounts" },
+        { status: 400 }
+      );
+    }
+    if (fromAccountId === toAccountId) {
+      return NextResponse.json(
+        { error: "Source and destination accounts must be different" },
+        { status: 400 }
+      );
+    }
+  }
+
+  // For transfers, compute the destination amount
+  let computedToAmount: number | null = null;
+  let computedExchangeRate: number | null = null;
+
+  if (type === "transfer" && fromAccountId && toAccountId) {
+    const fromAcc = await db.account.findFirst({
+      where: { id: fromAccountId, userId: user.id },
+    });
+    const toAcc = await db.account.findFirst({
+      where: { id: toAccountId, userId: user.id },
+    });
+
+    if (fromAcc && toAcc) {
+      if (fromAcc.currency === toAcc.currency) {
+        // Same currency: 1:1 transfer
+        computedExchangeRate = 1;
+        computedToAmount = amount;
+      } else if (toAmount && typeof toAmount === "number" && toAmount > 0) {
+        // Mode 3: final amount specified
+        computedToAmount = toAmount;
+        computedExchangeRate = toAmount / amount;
+      } else if (
+        exchangeRate &&
+        typeof exchangeRate === "number" &&
+        exchangeRate > 0
+      ) {
+        // Mode 2: manual rate specified
+        computedExchangeRate = exchangeRate;
+        computedToAmount = amount * exchangeRate;
+      } else {
+        // Mode 1: should have been resolved client-side, but fallback
+        computedExchangeRate = 1;
+        computedToAmount = amount;
+      }
+    }
+  }
 
   // Create transaction and update account balance atomically
   const transaction = await db.$transaction(async (tx) => {
@@ -129,6 +182,8 @@ export async function POST(request: NextRequest) {
         categoryId: categoryId || null,
         fromAccountId: fromAccountId || null,
         toAccountId: toAccountId || null,
+        exchangeRate: computedExchangeRate,
+        toAmount: computedToAmount,
       },
       include: {
         category: true,
@@ -149,16 +204,18 @@ export async function POST(request: NextRequest) {
         data: { balance: { increment: amount } },
       });
     } else if (type === "transfer") {
+      // Deduct from source in source currency
       if (fromAccountId) {
         await tx.account.update({
           where: { id: fromAccountId },
           data: { balance: { decrement: amount } },
         });
       }
-      if (toAccountId) {
+      // Credit destination with the converted amount
+      if (toAccountId && computedToAmount !== null) {
         await tx.account.update({
           where: { id: toAccountId },
-          data: { balance: { increment: amount } },
+          data: { balance: { increment: computedToAmount } },
         });
       }
     }

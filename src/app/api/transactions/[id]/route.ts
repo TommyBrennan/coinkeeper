@@ -71,9 +71,11 @@ export async function DELETE(
         });
       }
       if (existing.toAccountId) {
+        // Revert the destination with toAmount (converted amount), fallback to amount
+        const revertAmount = existing.toAmount ?? existing.amount;
         await tx.account.update({
           where: { id: existing.toAccountId },
-          data: { balance: { decrement: existing.amount } },
+          data: { balance: { decrement: revertAmount } },
         });
       }
     }
