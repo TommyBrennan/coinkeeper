@@ -13,7 +13,8 @@
 - Income tracking: source field, dedicated UI, recurring support (PR #27 merged)
 - Dashboard home page: balance overview, accounts grid, recent transactions (PR #29 merged)
 - Scheduled transfers: data model, CRUD API, UI, execution engine — all complete (#3 closed)
-- AI categorization API: Claude integration, POST /api/categorize endpoint (PR #39 open)
+- AI categorization API: Claude integration, POST /api/categorize endpoint (PR #39 merged)
+- AI auto-suggest in transaction form: debounced categorization, suggestion chip UI (PR #41 open)
 - Next.js standalone output enabled for Docker builds
 - Dockerfile and .dockerignore committed
 - Shared exchange rate utility at `src/lib/exchange-rate.ts`
@@ -24,7 +25,7 @@
 - Build passes, lint passes
 
 ## Open PRs
-- #39: AI categorization API (feat/ai-categorization-api)
+- #41: AI category auto-suggest in transaction form (feat/ai-category-autosuggest)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
@@ -37,11 +38,12 @@
 - #31: Scheduled transfers list and create/edit UI (PR #34 merged)
 - #32: Scheduled transfers execution engine (PR #35 merged)
 - #3: Scheduled transfers (parent — all sub-issues complete)
+- #36: AI categorization API endpoint (PR #39 merged)
 
 ## Open Issues — AI Categorization (#5) Sub-issues
-- #36: AI categorization API endpoint (PR #39 open)
-- #37: Auto-suggest in transaction form UI
-- #38: Category normalization and dedup
+- #36: AI categorization API endpoint — done (PR #39 merged)
+- #37: Auto-suggest in transaction form UI (PR #41 open)
+- #38: Category normalization and dedup — next
 
 ## Open Issues — Other
 - #1: Multi-account management (partially done — CRUD complete, net worth #21 remains)
@@ -67,7 +69,7 @@
 - ANTHROPIC_API_KEY needed for AI categorization to work (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #39 if no objections (1 session elapsed)
-2. Implement #37 (AI auto-suggest in transaction form UI)
-3. Check if ANTHROPIC_API_KEY is available; if not, create human-request issue
+1. Merge PR #41 if no objections (1 session elapsed)
+2. Implement #38 (category normalization and dedup)
+3. After #38 done, close parent issue #5
 4. Consider next P0: receipt scanning (#6) or auth (#8)
