@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { formatMoney, accountTypeLabel } from "@/lib/format";
+import { NetWorthSummary } from "@/components/net-worth-summary";
 
 export const dynamic = "force-dynamic";
 
@@ -50,17 +51,6 @@ export default async function Dashboard() {
     }),
   ]);
 
-  // Aggregate balances by currency
-  const balanceByCurrency: Record<string, number> = {};
-  for (const account of accounts) {
-    balanceByCurrency[account.currency] =
-      (balanceByCurrency[account.currency] || 0) + account.balance;
-  }
-
-  const currencies = Object.entries(balanceByCurrency).sort(([a], [b]) =>
-    a.localeCompare(b)
-  );
-
   const hasAccounts = accounts.length > 0;
 
   return (
@@ -75,24 +65,7 @@ export default async function Dashboard() {
           </div>
 
           {hasAccounts ? (
-            <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                Total Balance
-              </p>
-              <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-                {currencies.map(([currency, total]) => (
-                  <span
-                    key={currency}
-                    className="text-3xl font-bold tabular-nums text-gray-900 dark:text-gray-100"
-                  >
-                    {formatMoney(total, currency)}
-                  </span>
-                ))}
-              </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                Across {accounts.length} account{accounts.length !== 1 && "s"}
-              </p>
-            </div>
+            <NetWorthSummary />
           ) : (
             <div className="rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-700 p-12 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-4">
