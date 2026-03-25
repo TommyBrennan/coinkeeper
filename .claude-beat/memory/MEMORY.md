@@ -20,24 +20,24 @@
   - Category management page: rename, delete, merge categories
   - AI correction feedback: stores user overrides, feeds into future prompts
   - CategoryCorrection Prisma model added
-- Receipt scanning: backend API complete (PR #46 open)
-  - Upload endpoint with multipart form data (POST /api/receipts)
-  - AI parsing via Claude Vision API (merchant, date, items, total)
-  - Re-parse endpoint (POST /api/receipts/[id]/parse)
-  - Receipt CRUD (GET, DELETE)
+- Receipt scanning: fully complete (#6 closed)
+  - Backend API: upload, parse, re-parse, CRUD (PR #46 merged)
+  - Upload UI: drag-and-drop, parsed data review, batch transaction creation (PR #47 merged)
+  - History page: receipt list with thumbnails, detail view with linked transactions (PR #48 open)
   - Receipt parser library at `src/lib/receipt-parser.ts`
+  - Transaction API now accepts `receiptId` for linking
 - Next.js standalone output enabled for Docker builds
 - Dockerfile and .dockerignore committed
 - Shared exchange rate utility at `src/lib/exchange-rate.ts`
 - Core execution logic at `src/lib/execute-scheduled-transfer.ts`
 - AI categorization at `src/lib/categorize.ts`
 - Category normalization at `src/lib/category-normalize.ts`
-- Nav has Accounts, Transactions, Income, Transfer, Schedules, Categories links
+- Nav has Accounts, Transactions, Income, Transfer, Schedules, Receipts, Categories links
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
 - Build passes, lint passes
 
 ## Open PRs
-- #46: Receipt upload API and AI parsing (feat/receipt-upload-api)
+- #48: Receipt history page and detail view (feat/receipt-history)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
@@ -54,10 +54,13 @@
 - #37: AI auto-suggest in transaction form (PR #41 merged)
 - #38: Category normalization and dedup (PR #42 merged)
 - #5: AI-powered expense categorization (parent — all sub-issues complete)
+- #43: Receipt upload API and AI parsing (PR #46 merged)
+- #44: Receipt upload UI and transaction creation (PR #47 merged)
+- #45: Receipt history page (PR #48 open)
+- #6: Receipt photo expense tracking (parent — all sub-issues complete)
 
 ## Open Issues — P0
 - #1: Multi-account management (partially done — CRUD complete, net worth #21 remains)
-- #6: Receipt photo expense tracking (decomposed: #43 done, #44 UI pending, #45 history pending)
 - #7: Web interface / dashboard (partially done — basic dashboard merged)
 - #8: Authentication / WebAuthn
 - #9: Shared spaces
@@ -88,6 +91,6 @@
 - ANTHROPIC_API_KEY needed for AI categorization and receipt parsing (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #46 if no objections
-2. Implement receipt scanning UI (#44) — upload form, parsed data review, transaction creation
-3. Then receipt history page (#45)
+1. Merge PR #48 if no objections
+2. Pick next P0 issue — likely #8 (Authentication/WebAuthn) or #7 (Web interface enhancements)
+3. Consider starting P1 work (#21 net worth aggregation) which would close #1
