@@ -46,6 +46,8 @@ export function TransactionForm() {
   const [suggestion, setSuggestion] = useState<AISuggestion | null>(null);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+  // Track the last AI suggestion for correction feedback
+  const lastSuggestionRef = useRef<AISuggestion | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -106,6 +108,7 @@ export function TransactionForm() {
       // Only show suggestions with a category and reasonable confidence
       if (data.categoryId && data.confidence !== "low") {
         setSuggestion(data);
+        lastSuggestionRef.current = data;
 
         // If a new category was created, refresh the categories list
         if (data.isNew) {
@@ -220,6 +223,28 @@ export function TransactionForm() {
         const data = await res.json();
         setError(data.error || "Something went wrong");
         return;
+      }
+
+      // Send correction feedback if user chose a different category than AI suggested
+      const lastSuggestion = lastSuggestionRef.current;
+      if (
+        lastSuggestion?.categoryId &&
+        categoryId &&
+        lastSuggestion.categoryId !== categoryId &&
+        description.trim()
+      ) {
+        // Fire and forget — don't block on this
+        fetch("/api/categorize/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            description: description.trim(),
+            suggestedCategoryId: lastSuggestion.categoryId,
+            correctedCategoryId: categoryId,
+          }),
+        }).catch(() => {
+          // Silent failure for feedback
+        });
       }
 
       router.push("/transactions");

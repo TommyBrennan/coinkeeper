@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { categorizeTransaction } from "@/lib/categorize";
+import { findSimilar, normalizeName } from "@/lib/category-normalize";
 
 // POST /api/categorize — AI-powered category suggestion
 export async function POST(request: NextRequest) {
@@ -26,7 +27,6 @@ export async function POST(request: NextRequest) {
 
   // If user has no categories, seed defaults first
   if (categories.length === 0) {
-    // Trigger category seeding by calling the categories endpoint logic
     const DEFAULT_CATEGORIES = [
       { name: "Food & Dining", icon: "utensils", color: "#ef4444" },
       { name: "Transport", icon: "car", color: "#f97316" },
@@ -63,33 +63,54 @@ export async function POST(request: NextRequest) {
     categories.push(...seeded);
   }
 
+  // Load recent corrections for this user to help AI learn
+  const corrections = await db.categoryCorrection.findMany({
+    where: { userId: user.id },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
   // Call AI categorization
   const result = await categorizeTransaction(
     description.trim(),
     categories,
-    typeof amount === "number" ? amount : undefined
+    typeof amount === "number" ? amount : undefined,
+    corrections.length > 0 ? corrections : undefined
   );
 
-  // If AI suggested a new category, create it
+  // If AI suggested a new category, normalize and check for duplicates
   if (result.isNew && result.suggestedName) {
-    // Check for duplicate (case-insensitive)
-    const existing = categories.find(
-      (c) => c.name.toLowerCase() === result.suggestedName!.toLowerCase()
-    );
+    const normalized = normalizeName(result.suggestedName);
 
-    if (existing) {
-      // Already exists — use existing
-      result.categoryId = existing.id;
+    // Check for similar existing categories (fuzzy match + alias mapping)
+    const similar = findSimilar(normalized, categories);
+
+    if (similar) {
+      // Found a similar existing category — use it instead of creating a duplicate
+      result.categoryId = similar.id;
+      result.suggestedName = similar.name;
       result.isNew = false;
     } else {
-      // Create the new category
-      const newCategory = await db.category.create({
-        data: {
-          userId: user.id,
-          name: result.suggestedName,
-        },
-      });
-      result.categoryId = newCategory.id;
+      // Check exact match (case-insensitive) as a fallback
+      const existing = categories.find(
+        (c) => c.name.toLowerCase() === normalized.toLowerCase()
+      );
+
+      if (existing) {
+        result.categoryId = existing.id;
+        result.suggestedName = existing.name;
+        result.isNew = false;
+      } else {
+        // Create the new category with normalized name
+        const newCategory = await db.category.create({
+          data: {
+            userId: user.id,
+            name: normalized,
+          },
+        });
+        result.categoryId = newCategory.id;
+        result.suggestedName = normalized;
+      }
     }
   }
 

@@ -12,6 +12,12 @@ export interface CategorizationResult {
   isNew: boolean;
 }
 
+export interface CorrectionInfo {
+  description: string;
+  suggestedCategoryId: string | null;
+  correctedCategoryId: string;
+}
+
 const SYSTEM_PROMPT = `You are a financial transaction categorizer. Given a transaction description and a list of existing categories, your job is to:
 
 1. Pick the BEST matching existing category, OR
@@ -22,6 +28,7 @@ Rules:
 - If suggesting a new category, use a short, clear name (2-3 words max, Title Case)
 - Normalize similar concepts (e.g., "Groceries" maps to "Food & Dining" if it exists)
 - Return your confidence: "high" if very sure, "medium" if reasonable guess, "low" if uncertain
+- Pay attention to any user corrections provided — they indicate the user's preferences
 
 Respond with ONLY valid JSON in this exact format:
 {"match": "exact category name" | null, "newCategory": "suggested name" | null, "confidence": "high" | "medium" | "low"}
@@ -33,7 +40,8 @@ Never set both to non-null.`;
 function buildUserPrompt(
   description: string,
   amount: number | undefined,
-  categories: CategoryInfo[]
+  categories: CategoryInfo[],
+  corrections?: CorrectionInfo[]
 ): string {
   const catList = categories.map((c) => c.name).join(", ");
   let prompt = `Transaction: "${description}"`;
@@ -41,6 +49,26 @@ function buildUserPrompt(
     prompt += ` (amount: ${amount})`;
   }
   prompt += `\n\nExisting categories: [${catList}]`;
+
+  // Include corrections as learning examples
+  if (corrections && corrections.length > 0) {
+    const catMap = new Map(categories.map((c) => [c.id, c.name]));
+    const examples = corrections
+      .map((c) => {
+        const correctedName = catMap.get(c.correctedCategoryId);
+        const suggestedName = c.suggestedCategoryId
+          ? catMap.get(c.suggestedCategoryId)
+          : "none";
+        if (!correctedName) return null;
+        return `  "${c.description}" → user chose "${correctedName}" (AI suggested: ${suggestedName || "none"})`;
+      })
+      .filter(Boolean);
+
+    if (examples.length > 0) {
+      prompt += `\n\nUser correction history (learn from these preferences):\n${examples.join("\n")}`;
+    }
+  }
+
   return prompt;
 }
 
@@ -53,7 +81,8 @@ interface AIResponse {
 export async function categorizeTransaction(
   description: string,
   categories: CategoryInfo[],
-  amount?: number
+  amount?: number,
+  corrections?: CorrectionInfo[]
 ): Promise<CategorizationResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -77,7 +106,7 @@ export async function categorizeTransaction(
       messages: [
         {
           role: "user",
-          content: buildUserPrompt(description, amount, categories),
+          content: buildUserPrompt(description, amount, categories, corrections),
         },
       ],
     });
