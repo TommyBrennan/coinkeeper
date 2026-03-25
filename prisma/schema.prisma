@@ -191,6 +191,20 @@ model ScheduledTransfer {
   @@index([isActive])
 }
 
+// ─── Category Corrections (AI feedback) ─────────────────────────────
+
+model CategoryCorrection {
+  id                  String   @id @default(cuid())
+  userId              String
+  description         String   // transaction description that was categorized
+  suggestedCategoryId String?  // what AI suggested
+  correctedCategoryId String   // what user actually picked
+  createdAt           DateTime @default(now())
+
+  @@index([userId])
+  @@index([description])
+}
+
 // ─── Shared Spaces ───────────────────────────────────────────────────
 
 model Space {
