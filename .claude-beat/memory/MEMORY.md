@@ -13,19 +13,25 @@
 - Income tracking: source field, dedicated UI, recurring support (PR #27 merged)
 - Dashboard home page: balance overview, accounts grid, recent transactions (PR #29 merged)
 - Scheduled transfers: data model, CRUD API, UI, execution engine — all complete (#3 closed)
-- AI categorization API: Claude integration, POST /api/categorize endpoint (PR #39 merged)
-- AI auto-suggest in transaction form: debounced categorization, suggestion chip UI (PR #41 open)
+- AI categorization: fully complete (#5 closed)
+  - API endpoint with Claude integration (PR #39 merged)
+  - Auto-suggest in transaction form with debounce + suggestion chip (PR #41 merged)
+  - Category normalization: alias mapping (60+ aliases), fuzzy matching, title-case (PR #42 open)
+  - Category management page: rename, delete, merge categories
+  - AI correction feedback: stores user overrides, feeds into future prompts
+  - CategoryCorrection Prisma model added
 - Next.js standalone output enabled for Docker builds
 - Dockerfile and .dockerignore committed
 - Shared exchange rate utility at `src/lib/exchange-rate.ts`
 - Core execution logic at `src/lib/execute-scheduled-transfer.ts`
 - AI categorization at `src/lib/categorize.ts`
-- Nav has Accounts, Transactions, Income, Transfer, Schedules links
+- Category normalization at `src/lib/category-normalize.ts`
+- Nav has Accounts, Transactions, Income, Transfer, Schedules, Categories links
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
 - Build passes, lint passes
 
 ## Open PRs
-- #41: AI category auto-suggest in transaction form (feat/ai-category-autosuggest)
+- #42: Category normalization, dedup, merge UI, correction feedback (feat/category-normalization-dedup)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
@@ -39,23 +45,30 @@
 - #32: Scheduled transfers execution engine (PR #35 merged)
 - #3: Scheduled transfers (parent — all sub-issues complete)
 - #36: AI categorization API endpoint (PR #39 merged)
+- #37: AI auto-suggest in transaction form (PR #41 merged)
+- #5: AI-powered expense categorization (parent — all sub-issues complete)
 
-## Open Issues — AI Categorization (#5) Sub-issues
-- #36: AI categorization API endpoint — done (PR #39 merged)
-- #37: Auto-suggest in transaction form UI (PR #41 open)
-- #38: Category normalization and dedup — next
-
-## Open Issues — Other
+## Open Issues — P0
 - #1: Multi-account management (partially done — CRUD complete, net worth #21 remains)
-- #5: AI-powered expense categorization (P0, parent — decomposed into #36, #37, #38)
-- #6: Receipt photo expense tracking (P0)
-- #7: Web interface / dashboard (P0, partially done — basic dashboard merged)
-- #8: Authentication / WebAuthn (P0)
-- #9: Shared spaces (P0)
-- #10: Telegram bot interface (P0)
-- #11-#14: P1 features (analytics, price stats, notifications, AI insights)
-- #15-#18: P2 features (NLP entry, import/export, multi-currency aggregation, custom reports)
-- #21: Net worth aggregation (P1)
+- #6: Receipt photo expense tracking
+- #7: Web interface / dashboard (partially done — basic dashboard merged)
+- #8: Authentication / WebAuthn
+- #9: Shared spaces
+- #10: Telegram bot interface
+- #38: Category normalization and dedup (PR #42 open)
+
+## Open Issues — P1
+- #11: Rich analytics dashboard
+- #12: Product price statistics
+- #13: Smart notifications
+- #14: AI financial insights
+- #21: Net worth aggregation
+
+## Open Issues — P2
+- #15: Natural language transaction entry
+- #16: Import/Export transactions
+- #17: Multi-currency account aggregation
+- #18: Custom reports
 
 ## Important Notes
 - Disk space is comfortable (~34GB free)
@@ -69,7 +82,6 @@
 - ANTHROPIC_API_KEY needed for AI categorization to work (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #41 if no objections (1 session elapsed)
-2. Implement #38 (category normalization and dedup)
-3. After #38 done, close parent issue #5
-4. Consider next P0: receipt scanning (#6) or auth (#8)
+1. Merge PR #42 if no objections
+2. Pick next P0: receipt scanning (#6) or authentication (#8)
+3. Consider decomposing chosen P0 into sub-issues before implementing
