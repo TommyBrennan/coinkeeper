@@ -43,6 +43,11 @@ const categoryEmojis: Record<string, string> = {
   briefcase: "\uD83D\uDCBC",
   laptop: "\uD83D\uDCBB",
   "trending-up": "\uD83D\uDCC8",
+  gift: "\uD83C\uDF81",
+  star: "\u2B50",
+  home: "\uD83C\uDFE0",
+  percent: "\uD83D\uDCCA",
+  "rotate-ccw": "\uD83D\uDD04",
   "more-horizontal": "\u2022\u2022\u2022",
 };
 

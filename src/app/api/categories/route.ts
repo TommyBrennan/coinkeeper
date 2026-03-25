@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 
 const DEFAULT_CATEGORIES = [
+  // Expense categories
   { name: "Food & Dining", icon: "utensils", color: "#ef4444" },
   { name: "Transport", icon: "car", color: "#f97316" },
   { name: "Shopping", icon: "shopping-bag", color: "#a855f7" },
@@ -10,9 +11,16 @@ const DEFAULT_CATEGORIES = [
   { name: "Bills & Utilities", icon: "zap", color: "#eab308" },
   { name: "Health", icon: "heart", color: "#10b981" },
   { name: "Education", icon: "book", color: "#3b82f6" },
+  // Income categories
   { name: "Salary", icon: "briefcase", color: "#22c55e" },
   { name: "Freelance", icon: "laptop", color: "#06b6d4" },
   { name: "Investment", icon: "trending-up", color: "#8b5cf6" },
+  { name: "Gift", icon: "gift", color: "#f472b6" },
+  { name: "Bonus", icon: "star", color: "#fbbf24" },
+  { name: "Rental Income", icon: "home", color: "#34d399" },
+  { name: "Dividends", icon: "percent", color: "#818cf8" },
+  { name: "Refund", icon: "rotate-ccw", color: "#fb923c" },
+  // General
   { name: "Other", icon: "more-horizontal", color: "#6b7280" },
 ];
 
