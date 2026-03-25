@@ -23,9 +23,14 @@
 - Receipt scanning: fully complete (#6 closed)
   - Backend API: upload, parse, re-parse, CRUD (PR #46 merged)
   - Upload UI: drag-and-drop, parsed data review, batch transaction creation (PR #47 merged)
-  - History page: receipt list with thumbnails, detail view with linked transactions (PR #48 open)
+  - History page: receipt list with thumbnails, detail view with linked transactions (PR #48 merged)
   - Receipt parser library at `src/lib/receipt-parser.ts`
   - Transaction API now accepts `receiptId` for linking
+- Net worth aggregation: complete (#21 closed via PR #49)
+  - API endpoint at `/api/net-worth` with currency conversion
+  - NetWorthSummary client component with base currency selector
+  - Currency breakdown toggle with exchange rates
+  - Base currency stored in localStorage
 - Next.js standalone output enabled for Docker builds
 - Dockerfile and .dockerignore committed
 - Shared exchange rate utility at `src/lib/exchange-rate.ts`
@@ -37,7 +42,7 @@
 - Build passes, lint passes
 
 ## Open PRs
-- #48: Receipt history page and detail view (feat/receipt-history)
+- #49: Net worth aggregation with currency conversion (feat/net-worth-aggregation)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
@@ -56,11 +61,12 @@
 - #5: AI-powered expense categorization (parent — all sub-issues complete)
 - #43: Receipt upload API and AI parsing (PR #46 merged)
 - #44: Receipt upload UI and transaction creation (PR #47 merged)
-- #45: Receipt history page (PR #48 open)
+- #45: Receipt history page (PR #48 merged)
 - #6: Receipt photo expense tracking (parent — all sub-issues complete)
+- #21: Net worth aggregation (PR #49 open)
+- #1: Multi-account management (parent — all sub-issues complete)
 
 ## Open Issues — P0
-- #1: Multi-account management (partially done — CRUD complete, net worth #21 remains)
 - #7: Web interface / dashboard (partially done — basic dashboard merged)
 - #8: Authentication / WebAuthn
 - #9: Shared spaces
@@ -71,7 +77,6 @@
 - #12: Product price statistics
 - #13: Smart notifications
 - #14: AI financial insights
-- #21: Net worth aggregation
 
 ## Open Issues — P2
 - #15: Natural language transaction entry
@@ -91,6 +96,7 @@
 - ANTHROPIC_API_KEY needed for AI categorization and receipt parsing (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #48 if no objections
-2. Pick next P0 issue — likely #8 (Authentication/WebAuthn) or #7 (Web interface enhancements)
-3. Consider starting P1 work (#21 net worth aggregation) which would close #1
+1. Merge PR #49 if no objections
+2. Pick next P0 issue — likely #8 (Authentication/WebAuthn) which needs decomposition first
+3. #7 (Web interface) may be closeable if dashboard + net worth covers it, or needs analytics/settings
+4. Large P0 features (#8, #9, #10) all need decomposition before implementation
