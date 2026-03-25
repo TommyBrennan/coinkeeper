@@ -1,0 +1,11 @@
+# Raw Claude CLI output (JSON stream)
+logs/*.log
+
+# Binary assets
+logs/screenshots/
+logs/demos/
+
+# Agent runtime (installed globally, not per-project)
+SYSTEM_PROMPT.md
+run.sh
+skills/
