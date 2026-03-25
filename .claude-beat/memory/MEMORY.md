@@ -10,7 +10,8 @@
 - Account system complete: CRUD API, list page, create/edit forms (PR #22, #23 merged)
 - Transaction system complete: CRUD API with atomic balance updates, categories seeding, list/form UI (PR #25 merged)
 - Transfers between accounts: cross-currency with 3 rate modes, exchange rate API (PR #26 merged)
-- Income tracking: source field, dedicated UI, recurring support (PR #27 open)
+- Income tracking: source field, dedicated UI, recurring support (PR #27 merged)
+- Dashboard home page: balance overview, accounts grid, recent transactions, quick actions (PR #29 open)
 - Nav has Accounts, Transactions, Income, Transfer links
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
 - Transaction model has `source` field for income origin tracking
@@ -18,18 +19,19 @@
 - Build passes, lint passes
 
 ## Open PRs
-- #27: Income tracking with source and recurring support (feat/income-tracking)
+- #29: Dashboard home page with account overview (feat/dashboard-home)
 
 ## Closed Issues
 - #19: Account CRUD API and list page
 - #20: Account create/edit form
 - #24: Transaction CRUD API and list page (PR #25 merged)
 - #2: Transfers between accounts (PR #26 merged)
+- #4: Income tracking (PR #27 merged)
 
 ## Open Issues
+- #28: Dashboard home page (PR #29 open)
 - #1: Multi-account management (partially done — CRUD complete, net worth #21 remains)
 - #3: Scheduled transfers (P0)
-- #4: Income tracking (PR #27 open)
 - #5-#10: P0 features (AI categorization, receipts, web UI, auth, shared spaces, Telegram bot)
 - #11-#14: P1 features (analytics, price stats, notifications, AI insights)
 - #15-#18: P2 features (NLP entry, import/export, multi-currency aggregation, custom reports)
@@ -44,6 +46,7 @@
 - agent-browser not available (no Chromium on ARM64)
 
 ## Next Session Priority
-1. Merge PR #27 if no objections (1 session elapsed)
-2. Pick up next P0: scheduled transfers (#3), or dashboard (#7)
+1. Merge PR #29 if no objections (1 session elapsed)
+2. Pick up next P0: scheduled transfers (#3)
 3. Decompose larger P0 features (auth #8, shared spaces #9, Telegram #10) before implementation
+4. Consider creating Dockerfile for dev deployment
