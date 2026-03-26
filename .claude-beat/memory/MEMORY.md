@@ -38,21 +38,24 @@
 - AI categorization at `src/lib/categorize.ts`
 - Category normalization at `src/lib/category-normalize.ts`
 - Authentication complete: WebAuthn registration + login, session management, logout (PRs #52, #53 merged)
-- Shared spaces: Space/SpaceMember models in schema, CRUD API + UI complete (PR #58)
+- Shared spaces: Space/SpaceMember models in schema, CRUD + member management complete
   - `/spaces` list, `/spaces/new` create, `/spaces/[id]` detail, `/spaces/[id]/edit` rename
   - DeleteSpaceButton component with owner-only protection
+  - Member management: invite by email, change roles, remove members (PR #59)
+  - InviteMemberForm, MemberActions client components
+  - Sole-owner protections: cannot demote/remove last owner
 - Nav has Accounts, Transactions, Income, Transfer, Schedules, Receipts, Categories, Spaces links
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
 - Build passes, lint passes
 
 ## Open PRs
-- #58: Space CRUD API and management UI (feat/space-crud)
+- #59: Space member management (feat/space-member-management)
 
 ## Closed Issues (recent)
+- #54: Space CRUD API + list/create UI (PR #58 merged)
 - #7: Web interface / dashboard (closed — functional)
 - #8: Authentication / WebAuthn (closed — registration + login + session complete)
 - #9: Shared spaces (decomposed into #54-#57)
-- #54: Space CRUD API + list/create UI (via PR #58)
 - #51: Auth login + nav integration (PR #53 merged)
 - #50: Auth registration (PR #52 merged)
 - #21: Net worth aggregation (PR #49 merged)
@@ -89,7 +92,8 @@
 - ANTHROPIC_API_KEY needed for AI categorization and receipt parsing (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #58 if no objections
-2. Pick up #55 (Space member management — invite, remove, roles)
-3. Docker deployment still blocked (#40 — needs-human)
-4. After spaces complete, decompose #10 (Telegram Bot)
+1. Merge PR #59 if no objections
+2. Pick up #56 (Space context switcher + space-scoped accounts)
+3. Then #57 (Space-scoped transactions + role-based permissions)
+4. Docker deployment still blocked (#40 — needs-human)
+5. After spaces complete, decompose #10 (Telegram Bot)
