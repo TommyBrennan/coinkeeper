@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { getSpaceContext, checkSpacePermission, getSpaceAccountIds } from "@/lib/space-context";
 import { checkLowBalance } from "@/lib/check-low-balance";
+import { checkUnusualSpending } from "@/lib/check-unusual-spending";
 
 // GET /api/transactions — list transactions with optional filters
 export async function GET(request: NextRequest) {
@@ -340,6 +341,11 @@ export async function POST(request: NextRequest) {
   // Run checks asynchronously
   for (const accId of accountsToCheck) {
     checkLowBalance(accId).catch(() => {});
+  }
+
+  // Check for unusual spending patterns (fire and forget)
+  if (type === "expense") {
+    checkUnusualSpending(user.id, transaction.id, context.spaceId).catch(() => {});
   }
 
   return NextResponse.json(transaction, { status: 201 });
