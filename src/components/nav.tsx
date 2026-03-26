@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { LogoutButton } from "./logout-button";
 import { SpaceSwitcher } from "./space-switcher";
+import { NotificationBell } from "./notification-bell";
 import { getSpaceContext } from "@/lib/space-context";
 import { db } from "@/lib/db";
 
@@ -126,6 +127,7 @@ export async function Nav() {
             Settings
           </Link>
           <div className="ml-2 flex items-center gap-2 border-l border-gray-200 dark:border-gray-700 pl-2">
+            <NotificationBell />
             <SpaceSwitcher
               spaces={spaces}
               activeSpaceId={spaceContext.spaceId}
