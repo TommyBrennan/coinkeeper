@@ -28,10 +28,10 @@
 - Natural language transaction entry: complete (#15, PR #102)
   - Quick-add bar on dashboard, AI parsing + regex fallback
 - Import/Export: CSV import and export complete (#16, #96, #100)
-- Custom reports: SavedReport model + CRUD API merged (#104, PR #108)
+- Custom reports: SavedReport model + CRUD API merged (#104, PR #108), Reports page UI merged (#105, PR #109)
 - Settings page: profile, Telegram link, notification settings (expense reminder days)
 - Settings API: GET/PATCH /api/settings for user preferences
-- Nav has Transactions, Income, Transfer, Schedules, Receipts, Accounts, Analytics, Categories, Spaces, Settings
+- Nav has Transactions, Income, Transfer, Schedules, Receipts, Accounts, Prices, Currencies, Analytics, Insights, Reports, Categories, Spaces, Settings
 - Build passes, lint passes
 
 ## Open PRs
@@ -45,7 +45,6 @@
 - None (all P1 complete)
 
 ## Open Issues — P2
-- #105: Custom reports — Reports page UI
 - #106: Custom reports — PDF export
 - #107: Custom reports — Scheduled report generation
 
@@ -66,8 +65,9 @@
 ## Completed
 - #17: Multi-currency aggregation (PR #103)
 - #104: Custom reports data model + CRUD API (PR #108)
+- #105: Custom reports — Reports page UI (PR #109)
 
 ## Next Session Priority
-1. #105: Custom reports UI page
+1. #106: Custom reports — PDF export
 2. Docker deployment still blocked (#81) — check again each session
 3. Telegram delivery blocked on bot token (#66)
