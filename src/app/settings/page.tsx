@@ -1,12 +1,18 @@
 import { requireUser } from "@/lib/auth";
 import { TelegramLinkCard } from "@/components/telegram-link-card";
 import { getTelegramLinkStatus } from "@/lib/telegram";
+import { NotificationSettings } from "@/components/notification-settings";
+import { db } from "@/lib/db";
 
 export default async function SettingsPage() {
   const user = await requireUser();
 
   const telegramLink = await getTelegramLinkStatus(user.id);
   const botConfigured = !!process.env.TELEGRAM_BOT_TOKEN;
+  const fullUser = await db.user.findUnique({
+    where: { id: user.id },
+    select: { reminderDays: true },
+  });
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -31,6 +37,11 @@ export default async function SettingsPage() {
             </div>
           </dl>
         </div>
+
+        {/* Notifications section */}
+        <NotificationSettings
+          initialReminderDays={fullUser?.reminderDays ?? null}
+        />
 
         {/* Telegram section */}
         <TelegramLinkCard
