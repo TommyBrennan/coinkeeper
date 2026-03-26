@@ -1,12 +1,31 @@
 import Link from "next/link";
 import { getSession } from "@/lib/session";
 import { LogoutButton } from "./logout-button";
+import { SpaceSwitcher } from "./space-switcher";
+import { getSpaceContext } from "@/lib/space-context";
+import { db } from "@/lib/db";
 
 export async function Nav() {
   const session = await getSession();
 
   // Don't render nav for unauthenticated users
   if (!session) return null;
+
+  // Fetch user's spaces and current context for the switcher
+  const [spaceContext, memberships] = await Promise.all([
+    getSpaceContext(session.user.id),
+    db.spaceMember.findMany({
+      where: { userId: session.user.id },
+      include: { space: true },
+      orderBy: { space: { name: "asc" } },
+    }),
+  ]);
+
+  const spaces = memberships.map((m) => ({
+    id: m.space.id,
+    name: m.space.name,
+    role: m.role,
+  }));
 
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
@@ -82,7 +101,12 @@ export async function Nav() {
           >
             Spaces
           </Link>
-          <div className="ml-2 flex items-center gap-1 border-l border-gray-200 dark:border-gray-700 pl-2">
+          <div className="ml-2 flex items-center gap-2 border-l border-gray-200 dark:border-gray-700 pl-2">
+            <SpaceSwitcher
+              spaces={spaces}
+              activeSpaceId={spaceContext.spaceId}
+              activeSpaceName={spaceContext.spaceName}
+            />
             <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">
               {session.user.name}
             </span>

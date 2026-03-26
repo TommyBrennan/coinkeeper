@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { formatMoney, accountTypeLabel } from "@/lib/format";
 import { NetWorthSummary } from "@/components/net-worth-summary";
+import { getSpaceContext } from "@/lib/space-context";
 
 export const dynamic = "force-dynamic";
 
@@ -34,22 +35,48 @@ const categoryEmojis: Record<string, string> = {
 
 export default async function Dashboard() {
   const user = await requireUser();
+  const context = await getSpaceContext(user.id);
+
+  // Build account filter based on space context
+  const accountWhere = context.spaceId
+    ? { spaceId: context.spaceId, isArchived: false }
+    : { userId: user.id, spaceId: null, isArchived: false };
 
   const [accounts, recentTransactions] = await Promise.all([
     db.account.findMany({
-      where: { userId: user.id, isArchived: false },
+      where: accountWhere,
       orderBy: { createdAt: "desc" },
     }),
-    db.transaction.findMany({
-      where: { userId: user.id },
-      orderBy: { date: "desc" },
-      take: 10,
-      include: {
-        category: true,
-        fromAccount: true,
-        toAccount: true,
-      },
-    }),
+    // For transactions, filter by accounts in the current context
+    (async () => {
+      if (context.spaceId) {
+        // Get space account IDs, then filter transactions
+        const spaceAccountIds = await db.account.findMany({
+          where: { spaceId: context.spaceId },
+          select: { id: true },
+        });
+        const ids = spaceAccountIds.map((a) => a.id);
+        if (ids.length === 0) return [];
+        return db.transaction.findMany({
+          where: {
+            OR: [
+              { fromAccountId: { in: ids } },
+              { toAccountId: { in: ids } },
+            ],
+          },
+          orderBy: { date: "desc" },
+          take: 10,
+          include: { category: true, fromAccount: true, toAccount: true },
+        });
+      } else {
+        return db.transaction.findMany({
+          where: { userId: user.id },
+          orderBy: { date: "desc" },
+          take: 10,
+          include: { category: true, fromAccount: true, toAccount: true },
+        });
+      }
+    })(),
   ]);
 
   const hasAccounts = accounts.length > 0;
@@ -61,8 +88,13 @@ export default async function Dashboard() {
         <section>
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Dashboard
+              {context.spaceId ? context.spaceName : "Dashboard"}
             </h1>
+            {context.spaceId && (
+              <span className="text-sm text-gray-500 dark:text-gray-400 capitalize">
+                {context.role} view
+              </span>
+            )}
           </div>
 
           {hasAccounts ? (

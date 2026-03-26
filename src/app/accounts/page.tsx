@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { AccountCard } from "@/components/account-card";
+import { getSpaceContext } from "@/lib/space-context";
 import Link from "next/link";
 
 export const metadata = {
@@ -9,11 +10,18 @@ export const metadata = {
 
 export default async function AccountsPage() {
   const user = await requireUser();
+  const context = await getSpaceContext(user.id);
+
+  const accountWhere = context.spaceId
+    ? { spaceId: context.spaceId, isArchived: false }
+    : { userId: user.id, spaceId: null, isArchived: false };
 
   const accounts = await db.account.findMany({
-    where: { userId: user.id, isArchived: false },
+    where: accountWhere,
     orderBy: { createdAt: "desc" },
   });
+
+  const canCreate = !context.spaceId || context.role !== "viewer";
 
   return (
     <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8">
@@ -21,14 +29,18 @@ export default async function AccountsPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Accounts
+            {context.spaceId ? `${context.spaceName} — Accounts` : "Accounts"}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             {accounts.length === 0
               ? "No accounts yet"
               : `${accounts.length} account${accounts.length === 1 ? "" : "s"}`}
+            {context.spaceId && context.role && (
+              <span className="capitalize"> · {context.role}</span>
+            )}
           </p>
         </div>
+        {canCreate && (
         <Link
           href="/accounts/new"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
@@ -48,6 +60,7 @@ export default async function AccountsPage() {
           </svg>
           Add Account
         </Link>
+        )}
       </div>
 
       {/* Account List */}
@@ -70,27 +83,31 @@ export default async function AccountsPage() {
             No accounts yet
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Create your first account to start tracking your finances.
+            {context.spaceId && context.role === "viewer"
+              ? "No accounts in this space yet."
+              : "Create your first account to start tracking your finances."}
           </p>
-          <Link
-            href="/accounts/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
+          {canCreate && (
+            <Link
+              href="/accounts/new"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 4.5v15m7.5-7.5h-15"
-              />
-            </svg>
-            Create Account
-          </Link>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              Create Account
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
