@@ -14,6 +14,7 @@ model User {
   name         String
   email        String   @unique
   reminderDays Int?     // days without transactions before reminder (null = disabled)
+  baseCurrency String   @default("USD") // preferred base currency for net worth display
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -350,4 +351,19 @@ model SpaceMember {
 
   @@unique([userId, spaceId])
   @@index([spaceId])
+}
+
+// ─── Exchange Rate History ──────────────────────────────────────────
+
+model ExchangeRateHistory {
+  id         String   @id @default(cuid())
+  fromCurrency String
+  toCurrency   String
+  rate         Float
+  date         DateTime // date the rate was recorded (truncated to day)
+  createdAt    DateTime @default(now())
+
+  @@unique([fromCurrency, toCurrency, date])
+  @@index([fromCurrency, toCurrency])
+  @@index([date])
 }
