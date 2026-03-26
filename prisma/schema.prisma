@@ -26,6 +26,7 @@ model User {
   spaceMemberships SpaceMember[]
   telegramLink     TelegramLink?
   telegramLinkCodes TelegramLinkCode[]
+  products         Product[]
 }
 
 // ─── WebAuthn Credentials ────────────────────────────────────────────
@@ -157,7 +158,43 @@ model Receipt {
   processedAt DateTime?
   createdAt   DateTime @default(now())
 
-  transactions Transaction[]
+  transactions  Transaction[]
+  productPrices ProductPrice[]
+}
+
+// ─── Products & Price Tracking ──────────────────────────────────────
+
+model Product {
+  id             String   @id @default(cuid())
+  userId         String
+  name           String   // display name (from first observation)
+  normalizedName String   // lowercase, trimmed, collapsed whitespace
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prices ProductPrice[]
+
+  @@unique([userId, normalizedName])
+  @@index([userId])
+}
+
+model ProductPrice {
+  id        String   @id @default(cuid())
+  productId String
+  receiptId String?
+  merchant  String?  // store name from receipt
+  unitPrice Float
+  currency  String   @default("USD")
+  date      DateTime // purchase date
+  createdAt DateTime @default(now())
+
+  product Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  receipt Receipt? @relation(fields: [receiptId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([date])
+  @@index([receiptId])
 }
 
 // ─── Recurring Rules ─────────────────────────────────────────────────
