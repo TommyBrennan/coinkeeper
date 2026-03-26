@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { getSpaceContext, getSpaceAccountIds } from "@/lib/space-context";
 import { TransactionCard } from "@/components/transaction-card";
 import Link from "next/link";
 
@@ -31,21 +32,56 @@ function formatDateHeading(dateStr: string): string {
 
 export default async function TransactionsPage() {
   const user = await requireUser();
+  const context = await getSpaceContext(user.id);
 
-  const transactions = await db.transaction.findMany({
-    where: { userId: user.id },
-    include: {
-      category: true,
-      fromAccount: {
-        select: { id: true, name: true, currency: true, color: true },
+  // Determine if user can create transactions in this context
+  const canCreate = !context.spaceId || context.role !== "viewer";
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let transactions: any[];
+  if (context.spaceId) {
+    // Space context — show transactions on space accounts
+    const spaceAccountIds = await getSpaceAccountIds(context.spaceId);
+    if (spaceAccountIds.length === 0) {
+      transactions = [];
+    } else {
+      transactions = await db.transaction.findMany({
+        where: {
+          OR: [
+            { fromAccountId: { in: spaceAccountIds } },
+            { toAccountId: { in: spaceAccountIds } },
+          ],
+        },
+        include: {
+          category: true,
+          fromAccount: {
+            select: { id: true, name: true, currency: true, color: true },
+          },
+          toAccount: {
+            select: { id: true, name: true, currency: true, color: true },
+          },
+        },
+        orderBy: { date: "desc" },
+        take: 50,
+      });
+    }
+  } else {
+    // Personal context
+    transactions = await db.transaction.findMany({
+      where: { userId: user.id },
+      include: {
+        category: true,
+        fromAccount: {
+          select: { id: true, name: true, currency: true, color: true },
+        },
+        toAccount: {
+          select: { id: true, name: true, currency: true, color: true },
+        },
       },
-      toAccount: {
-        select: { id: true, name: true, currency: true, color: true },
-      },
-    },
-    orderBy: { date: "desc" },
-    take: 50,
-  });
+      orderBy: { date: "desc" },
+      take: 50,
+    });
+  }
 
   // Group by date
   const grouped: Record<string, typeof transactions> = {};
@@ -73,25 +109,27 @@ export default async function TransactionsPage() {
               : `${transactions.length} transaction${transactions.length === 1 ? "" : "s"}`}
           </p>
         </div>
-        <Link
-          href="/transactions/new"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
+        {canCreate && (
+          <Link
+            href="/transactions/new"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 4.5v15m7.5-7.5h-15"
-            />
-          </svg>
-          Add Transaction
-        </Link>
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+            Add Transaction
+          </Link>
+        )}
       </div>
 
       {/* Transaction List */}
@@ -114,27 +152,31 @@ export default async function TransactionsPage() {
             No transactions yet
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-            Record your first expense or income to start tracking.
+            {context.spaceId
+              ? "No transactions in this space yet."
+              : "Record your first expense or income to start tracking."}
           </p>
-          <Link
-            href="/transactions/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
+          {canCreate && (
+            <Link
+              href="/transactions/new"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 4.5v15m7.5-7.5h-15"
-              />
-            </svg>
-            Add Transaction
-          </Link>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              Add Transaction
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-6">

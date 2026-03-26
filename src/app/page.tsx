@@ -80,6 +80,7 @@ export default async function Dashboard() {
   ]);
 
   const hasAccounts = accounts.length > 0;
+  const canEdit = !context.spaceId || context.role !== "viewer";
 
   return (
     <main className="flex-1 px-4 py-8">
@@ -134,7 +135,7 @@ export default async function Dashboard() {
         </section>
 
         {/* Quick Actions */}
-        {hasAccounts && (
+        {hasAccounts && canEdit && (
           <section>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <QuickAction
