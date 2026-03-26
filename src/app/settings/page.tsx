@@ -2,6 +2,7 @@ import { requireUser } from "@/lib/auth";
 import { TelegramLinkCard } from "@/components/telegram-link-card";
 import { getTelegramLinkStatus } from "@/lib/telegram";
 import { NotificationSettings } from "@/components/notification-settings";
+import { BaseCurrencySettings } from "@/components/base-currency-settings";
 import { db } from "@/lib/db";
 
 export default async function SettingsPage() {
@@ -11,7 +12,7 @@ export default async function SettingsPage() {
   const botConfigured = !!process.env.TELEGRAM_BOT_TOKEN;
   const fullUser = await db.user.findUnique({
     where: { id: user.id },
-    select: { reminderDays: true },
+    select: { reminderDays: true, baseCurrency: true },
   });
 
   return (
@@ -37,6 +38,11 @@ export default async function SettingsPage() {
             </div>
           </dl>
         </div>
+
+        {/* Base currency preference */}
+        <BaseCurrencySettings
+          initialBaseCurrency={fullUser?.baseCurrency ?? "USD"}
+        />
 
         {/* Notifications section */}
         <NotificationSettings

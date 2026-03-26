@@ -39,12 +39,28 @@ export function NetWorthSummary() {
   const [loading, setLoading] = useState(true);
   const [showBreakdown, setShowBreakdown] = useState(false);
 
-  // Load saved preference
+  // Load saved preference — try DB first, fall back to localStorage
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && POPULAR_CURRENCIES.includes(saved)) {
-      setBaseCurrency(saved);
+    async function loadPreference() {
+      try {
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const settings = await res.json();
+          if (settings.baseCurrency) {
+            setBaseCurrency(settings.baseCurrency);
+            localStorage.setItem(STORAGE_KEY, settings.baseCurrency);
+            return;
+          }
+        }
+      } catch {
+        // Fall back to localStorage
+      }
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved && POPULAR_CURRENCIES.includes(saved)) {
+        setBaseCurrency(saved);
+      }
     }
+    loadPreference();
   }, []);
 
   const fetchNetWorth = useCallback(async (currency: string) => {
@@ -66,9 +82,20 @@ export function NetWorthSummary() {
     fetchNetWorth(baseCurrency);
   }, [baseCurrency, fetchNetWorth]);
 
-  const handleCurrencyChange = (newCurrency: string) => {
+  const handleCurrencyChange = async (newCurrency: string) => {
     setBaseCurrency(newCurrency);
     localStorage.setItem(STORAGE_KEY, newCurrency);
+
+    // Persist to DB
+    try {
+      await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ baseCurrency: newCurrency }),
+      });
+    } catch {
+      // localStorage is the fallback
+    }
   };
 
   if (loading && !data) {
