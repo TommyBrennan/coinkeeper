@@ -11,7 +11,7 @@
 - Transaction system complete: CRUD API with atomic balance updates, categories seeding, list/form UI
 - Transfers between accounts: cross-currency with 3 rate modes, exchange rate API
 - Income tracking: source field, dedicated UI, recurring support
-- Dashboard home page: balance overview, accounts grid, recent transactions
+- Dashboard home page: balance overview, accounts grid, recent transactions, quick-add bar
 - Scheduled transfers: data model, CRUD API, UI, execution engine + confirmation notifications
 - AI categorization: fully complete
 - Receipt scanning: fully complete
@@ -23,9 +23,11 @@
 - Analytics: fully complete (spending by category, trends, balance evolution)
 - Product prices: fully complete (data model, page, trend charts)
 - AI Financial Insights: fully complete (API + dashboard UI)
-- Smart notifications progress:
-  - Done: data model + notification center (#86), low balance warnings (#88), transfer confirmations (#90), expense reminders (#92)
-  - Remaining: unusual spending alerts, web push delivery, Telegram delivery (blocked on #66)
+- Smart notifications: fully complete (except Telegram delivery — blocked on #66)
+  - Done: data model + notification center, low balance warnings, transfer confirmations, expense reminders, unusual spending alerts, web push delivery
+- Natural language transaction entry: complete (#15, PR #102)
+  - Quick-add bar on dashboard, AI parsing + regex fallback
+- Import/Export: CSV import and export complete (#16, #96, #100)
 - Settings page: profile, Telegram link, notification settings (expense reminder days)
 - Settings API: GET/PATCH /api/settings for user preferences
 - Nav has Transactions, Income, Transfer, Schedules, Receipts, Accounts, Analytics, Categories, Spaces, Settings
@@ -39,11 +41,9 @@
 - #66: Bot token needed (needs-human, blocked)
 
 ## Open Issues — P1
-- #13: Smart notifications (partially done — unusual spending alerts, web push, Telegram delivery remaining)
+- None (all P1 complete)
 
 ## Open Issues — P2
-- #15: Natural language transaction entry
-- #16: Import/Export transactions
 - #17: Multi-currency account aggregation
 - #18: Custom reports
 
@@ -62,8 +62,6 @@
 - Expense reminder check has 24h cooldown
 
 ## Next Session Priority
-1. Implement unusual spending alerts (AI-powered, part of #13)
-2. Consider web push delivery setup (service worker + push subscription)
-3. Pick up P2 issues (#15 natural language entry, #16 import/export)
-4. Docker deployment still blocked (#81)
-5. Telegram delivery blocked on bot token (#66)
+1. Pick up P2 issues (#17 multi-currency aggregation, #18 custom reports)
+2. Docker deployment still blocked (#81) — check again each session
+3. Telegram delivery blocked on bot token (#66)
