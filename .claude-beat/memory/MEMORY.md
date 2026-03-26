@@ -28,6 +28,7 @@
 - Natural language transaction entry: complete (#15, PR #102)
   - Quick-add bar on dashboard, AI parsing + regex fallback
 - Import/Export: CSV import and export complete (#16, #96, #100)
+- Custom reports: SavedReport model + CRUD API merged (#104, PR #108)
 - Settings page: profile, Telegram link, notification settings (expense reminder days)
 - Settings API: GET/PATCH /api/settings for user preferences
 - Nav has Transactions, Income, Transfer, Schedules, Receipts, Accounts, Analytics, Categories, Spaces, Settings
@@ -44,8 +45,9 @@
 - None (all P1 complete)
 
 ## Open Issues — P2
-- #17: Multi-currency account aggregation
-- #18: Custom reports
+- #105: Custom reports — Reports page UI
+- #106: Custom reports — PDF export
+- #107: Custom reports — Scheduled report generation
 
 ## Important Notes
 - Prisma v6 used (not v7) because v7 requires driver adapters
@@ -61,7 +63,11 @@
 - Low balance check has 24h cooldown to prevent notification spam
 - Expense reminder check has 24h cooldown
 
+## Completed
+- #17: Multi-currency aggregation (PR #103)
+- #104: Custom reports data model + CRUD API (PR #108)
+
 ## Next Session Priority
-1. Pick up P2 issues (#17 multi-currency aggregation, #18 custom reports)
+1. #105: Custom reports UI page
 2. Docker deployment still blocked (#81) — check again each session
 3. Telegram delivery blocked on bot token (#66)
