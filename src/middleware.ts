@@ -8,8 +8,12 @@ import { NextRequest, NextResponse } from "next/server";
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow auth pages and auth API routes
-  if (pathname.startsWith("/auth") || pathname.startsWith("/api/auth")) {
+  // Allow auth pages, auth API routes, and Telegram webhook
+  if (
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/telegram/webhook")
+  ) {
     return NextResponse.next();
   }
 
