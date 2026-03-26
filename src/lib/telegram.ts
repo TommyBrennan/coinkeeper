@@ -1,6 +1,7 @@
 import { Bot, Context, InlineKeyboard, webhookCallback } from "grammy";
 import { db } from "./db";
 import { categorizeTransaction } from "./categorize";
+import { parseReceiptImage, type ParsedReceipt, type ReceiptLineItem } from "./receipt-parser";
 import crypto from "crypto";
 
 // ─── Bot Instance ────────────────────────────────────────────────────
@@ -177,6 +178,166 @@ function cleanupPendingExpenses() {
   }
 }
 
+// ─── Pending Receipt State ──────────────────────────────────────────
+
+interface PendingReceipt {
+  userId: string;
+  receiptId: string;
+  parsed: ParsedReceipt;
+  createdAt: number;
+}
+
+// In-memory store for pending receipts awaiting confirmation/account selection
+const pendingReceipts = new Map<string, PendingReceipt>();
+
+function cleanupPendingReceipts() {
+  const now = Date.now();
+  const EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
+  for (const [chatId, pending] of pendingReceipts.entries()) {
+    if (now - pending.createdAt > EXPIRY_MS) {
+      pendingReceipts.delete(chatId);
+    }
+  }
+}
+
+// ─── Receipt Helpers ────────────────────────────────────────────────
+
+function formatReceiptMessage(parsed: ParsedReceipt): string {
+  const lines: string[] = ["\uD83E\uDDFE Receipt parsed!\n"];
+
+  if (parsed.merchant) {
+    lines.push(`\uD83C\uDFEA ${parsed.merchant}`);
+  }
+  if (parsed.date) {
+    lines.push(`\uD83D\uDCC5 ${parsed.date}`);
+  }
+  if (parsed.currency) {
+    lines.push(`\uD83D\uDCB1 ${parsed.currency}`);
+  }
+
+  if (parsed.lineItems.length > 0) {
+    lines.push("");
+    lines.push("\uD83D\uDCCB Items:");
+    for (const item of parsed.lineItems.slice(0, 15)) {
+      const qty = item.quantity > 1 ? ` x${item.quantity}` : "";
+      lines.push(`  \u2022 ${item.name}${qty} — ${item.totalPrice.toFixed(2)}`);
+    }
+    if (parsed.lineItems.length > 15) {
+      lines.push(`  ... and ${parsed.lineItems.length - 15} more items`);
+    }
+  }
+
+  lines.push("");
+  if (parsed.subtotal !== null) {
+    lines.push(`Subtotal: ${parsed.subtotal.toFixed(2)}`);
+  }
+  if (parsed.tax !== null) {
+    lines.push(`Tax: ${parsed.tax.toFixed(2)}`);
+  }
+  if (parsed.total !== null) {
+    lines.push(`\uD83D\uDCB0 Total: ${parsed.total.toFixed(2)}${parsed.currency ? ` ${parsed.currency}` : ""}`);
+  }
+
+  return lines.join("\n");
+}
+
+async function createReceiptTransactions(
+  userId: string,
+  accountId: string,
+  receiptId: string,
+  parsed: ParsedReceipt,
+): Promise<number> {
+  const account = await db.account.findFirst({
+    where: { id: accountId, userId, isArchived: false },
+  });
+  if (!account) throw new Error("Account not found");
+
+  const currency = parsed.currency || account.currency;
+  const merchant = parsed.merchant || "Receipt";
+
+  // Fetch user categories for AI categorization
+  const categories = await db.category.findMany({
+    where: { userId },
+    select: { id: true, name: true },
+  });
+
+  const corrections = await db.categoryCorrection.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 10,
+  });
+
+  const correctionData = corrections.map((c) => ({
+    description: c.description,
+    suggestedCategoryId: c.suggestedCategoryId,
+    correctedCategoryId: c.correctedCategoryId,
+  }));
+
+  let createdCount = 0;
+  const items = parsed.lineItems.length > 0
+    ? parsed.lineItems
+    : parsed.total !== null
+      ? [{ name: merchant, quantity: 1, unitPrice: parsed.total, totalPrice: parsed.total } as ReceiptLineItem]
+      : [];
+
+  for (const item of items) {
+    const description = `${merchant} — ${item.name}`;
+
+    // AI categorization per item
+    const catResult = await categorizeTransaction(
+      description,
+      categories,
+      item.totalPrice,
+      correctionData,
+    );
+
+    let categoryId: string | null = catResult.categoryId;
+
+    if (!categoryId && catResult.isNew && catResult.suggestedName) {
+      try {
+        const newCat = await db.category.create({
+          data: { userId, name: catResult.suggestedName },
+        });
+        categoryId = newCat.id;
+        // Add to local categories list for subsequent items
+        categories.push({ id: newCat.id, name: newCat.name });
+      } catch {
+        const existing = await db.category.findFirst({
+          where: { userId, name: catResult.suggestedName },
+        });
+        if (existing) {
+          categoryId = existing.id;
+        }
+      }
+    }
+
+    await db.$transaction(async (tx) => {
+      await tx.transaction.create({
+        data: {
+          userId,
+          type: "expense",
+          amount: item.totalPrice,
+          currency,
+          description,
+          date: parsed.date ? new Date(parsed.date) : new Date(),
+          categoryId,
+          fromAccountId: accountId,
+          receiptId,
+        },
+      });
+
+      await tx.account.update({
+        where: { id: accountId },
+        data: { balance: { decrement: item.totalPrice } },
+      });
+    });
+
+    createdCount++;
+  }
+
+  return createdCount;
+}
+
 // ─── Transaction Creation ───────────────────────────────────────────
 
 async function createExpenseTransaction(
@@ -326,7 +487,10 @@ function registerHandlers(bot: Bot) {
     const linked = await requireLinkedUser(ctx);
     if (!linked) return;
 
-    if (pendingExpenses.has(chatId)) {
+    if (pendingReceipts.has(chatId)) {
+      pendingReceipts.delete(chatId);
+      await ctx.reply("Receipt processing cancelled.");
+    } else if (pendingExpenses.has(chatId)) {
       pendingExpenses.delete(chatId);
       await ctx.reply("Expense entry cancelled.");
     } else {
@@ -487,12 +651,14 @@ function registerHandlers(bot: Bot) {
       "/spending \u2014 Monthly spending summary\n" +
       "/spending week \u2014 Last 7 days\n" +
       "/spending year \u2014 Year-to-date\n" +
-      "/cancel \u2014 Cancel pending expense entry\n" +
+      "/cancel \u2014 Cancel pending entry\n" +
       "/help \u2014 Show this help message\n" +
       "/unlink \u2014 Unlink your Telegram account\n\n" +
       "\u{1F4B8} Quick expense entry:\n" +
       "Just send a message with an amount!\n" +
-      'Examples: "Coffee 5.50", "25 EUR Lunch", "Groceries 42.99"'
+      'Examples: "Coffee 5.50", "25 EUR Lunch", "Groceries 42.99"\n\n' +
+      "\uD83E\uDDFE Receipt scanning:\n" +
+      "Send a photo of a receipt and I'll extract the items automatically!"
     );
   });
 
@@ -577,7 +743,153 @@ function registerHandlers(bot: Bot) {
       return;
     }
 
-    // Handle cancel button
+    // Handle receipt confirmation
+    if (data === "receipt_confirm") {
+      const pending = pendingReceipts.get(chatId);
+      if (!pending) {
+        await ctx.answerCallbackQuery({ text: "Receipt expired. Send the photo again." });
+        try {
+          await ctx.editMessageText("This receipt has expired. Send the photo again to try.");
+        } catch { /* ignore */ }
+        return;
+      }
+
+      // Fetch user accounts
+      const accounts = await db.account.findMany({
+        where: { userId: pending.userId, isArchived: false, spaceId: null },
+        orderBy: { createdAt: "asc" },
+      });
+
+      if (accounts.length === 0) {
+        pendingReceipts.delete(chatId);
+        await ctx.answerCallbackQuery({ text: "No accounts found." });
+        try {
+          await ctx.editMessageText("You don't have any accounts. Create one in the web app first!");
+        } catch { /* ignore */ }
+        return;
+      }
+
+      if (accounts.length === 1) {
+        // Single account — create transactions immediately
+        await ctx.answerCallbackQuery({ text: "Creating transactions..." });
+        try {
+          const count = await createReceiptTransactions(
+            pending.userId,
+            accounts[0].id,
+            pending.receiptId,
+            pending.parsed,
+          );
+          pendingReceipts.delete(chatId);
+          try {
+            await ctx.editMessageText(
+              `\u2705 Receipt processed!\n\n` +
+              `\uD83D\uDCDD ${count} transaction${count !== 1 ? "s" : ""} created\n` +
+              `\uD83D\uDCB3 ${accounts[0].name}`
+            );
+          } catch {
+            await ctx.reply(
+              `\u2705 Receipt processed! ${count} transaction${count !== 1 ? "s" : ""} created.`
+            );
+          }
+        } catch (error) {
+          console.error("Failed to create receipt transactions:", error);
+          pendingReceipts.delete(chatId);
+          try {
+            await ctx.editMessageText("Failed to create transactions. Please try again.");
+          } catch {
+            await ctx.reply("Failed to create transactions. Please try again.");
+          }
+        }
+        return;
+      }
+
+      // Multiple accounts — show account picker
+      const keyboard = new InlineKeyboard();
+      for (const account of accounts) {
+        keyboard.text(
+          `${account.name} (${account.currency})`,
+          `receipt_account:${account.id}`,
+        ).row();
+      }
+      keyboard.text("\u274C Cancel", "receipt_cancel");
+
+      await ctx.answerCallbackQuery();
+      try {
+        await ctx.editMessageText(
+          formatReceiptMessage(pending.parsed) + "\n\nWhich account should I charge?",
+          { reply_markup: keyboard },
+        );
+      } catch { /* ignore */ }
+      return;
+    }
+
+    // Handle receipt account selection
+    if (data.startsWith("receipt_account:")) {
+      const accountId = data.slice("receipt_account:".length);
+      const pending = pendingReceipts.get(chatId);
+
+      if (!pending) {
+        await ctx.answerCallbackQuery({ text: "Receipt expired. Send the photo again." });
+        try {
+          await ctx.editMessageText("This receipt has expired. Send the photo again.");
+        } catch { /* ignore */ }
+        return;
+      }
+
+      const account = await db.account.findFirst({
+        where: { id: accountId, userId: pending.userId, isArchived: false },
+      });
+
+      if (!account) {
+        await ctx.answerCallbackQuery({ text: "Account not found." });
+        return;
+      }
+
+      await ctx.answerCallbackQuery({ text: "Creating transactions..." });
+      try {
+        const count = await createReceiptTransactions(
+          pending.userId,
+          accountId,
+          pending.receiptId,
+          pending.parsed,
+        );
+        pendingReceipts.delete(chatId);
+        try {
+          await ctx.editMessageText(
+            `\u2705 Receipt processed!\n\n` +
+            `\uD83D\uDCDD ${count} transaction${count !== 1 ? "s" : ""} created\n` +
+            `\uD83D\uDCB3 ${account.name}`
+          );
+        } catch {
+          await ctx.reply(
+            `\u2705 Receipt processed! ${count} transaction${count !== 1 ? "s" : ""} created.`
+          );
+        }
+      } catch (error) {
+        console.error("Failed to create receipt transactions:", error);
+        pendingReceipts.delete(chatId);
+        try {
+          await ctx.editMessageText("Failed to create transactions. Please try again.");
+        } catch {
+          await ctx.reply("Failed to create transactions. Please try again.");
+        }
+      }
+      return;
+    }
+
+    // Handle receipt cancel
+    if (data === "receipt_cancel") {
+      pendingReceipts.delete(chatId);
+      await ctx.answerCallbackQuery({ text: "Cancelled." });
+      try {
+        await ctx.editMessageText("Receipt processing cancelled.");
+      } catch {
+        await ctx.reply("Receipt processing cancelled.");
+      }
+      return;
+    }
+
+    // Handle cancel button (expense)
     if (data === "cancel_expense") {
       pendingExpenses.delete(chatId);
       await ctx.answerCallbackQuery({ text: "Cancelled." });
@@ -590,6 +902,107 @@ function registerHandlers(bot: Bot) {
     }
 
     await ctx.answerCallbackQuery();
+  });
+
+  // ─── Photo Message Handler (receipt scanning) ─────────────────────
+
+  bot.on("message:photo", async (ctx) => {
+    const chatId = ctx.chat?.id?.toString();
+    if (!chatId) return;
+
+    const user = await getUserByChatId(chatId);
+    if (!user) {
+      await ctx.reply(
+        "Please link your account first. Send /start for instructions."
+      );
+      return;
+    }
+
+    // Clean up expired pending receipts
+    cleanupPendingReceipts();
+
+    // Get highest resolution photo (last in array)
+    const photos = ctx.message.photo;
+    const photo = photos[photos.length - 1];
+
+    await ctx.reply("\uD83D\uDD0D Processing receipt... This may take a moment.");
+
+    try {
+      // Download the photo from Telegram
+      const file = await ctx.api.getFile(photo.file_id);
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      const fileUrl = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
+
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to download photo: ${response.status}`);
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      const base64 = buffer.toString("base64");
+
+      // Determine MIME type from file extension
+      const ext = file.file_path?.split(".").pop()?.toLowerCase() || "jpg";
+      const mimeMap: Record<string, "image/jpeg" | "image/png" | "image/webp" | "image/gif"> = {
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        png: "image/png",
+        webp: "image/webp",
+        gif: "image/gif",
+      };
+      const mimeType = mimeMap[ext] || "image/jpeg";
+
+      // Parse receipt using AI
+      const parsed = await parseReceiptImage(base64, mimeType);
+
+      // Check if parsing produced useful results
+      if (!parsed.total && parsed.lineItems.length === 0) {
+        await ctx.reply(
+          "\u26A0\uFE0F I couldn't extract receipt data from this photo.\n\n" +
+          "Tips for better results:\n" +
+          "\u2022 Make sure the receipt is well-lit\n" +
+          "\u2022 Avoid shadows and glare\n" +
+          "\u2022 Include the full receipt in the frame\n" +
+          "\u2022 Try taking a closer photo"
+        );
+        return;
+      }
+
+      // Store receipt in database
+      const receipt = await db.receipt.create({
+        data: {
+          imagePath: `telegram://${photo.file_id}`,
+          merchant: parsed.merchant,
+          total: parsed.total,
+          currency: parsed.currency,
+          rawText: parsed.rawText,
+          parsedData: JSON.stringify(parsed),
+          processedAt: new Date(),
+        },
+      });
+
+      // Store pending receipt for confirmation
+      pendingReceipts.set(chatId, {
+        userId: user.id,
+        receiptId: receipt.id,
+        parsed,
+        createdAt: Date.now(),
+      });
+
+      // Show parsed data with confirm/cancel buttons
+      const message = formatReceiptMessage(parsed);
+      const keyboard = new InlineKeyboard()
+        .text("\u2705 Confirm", "receipt_confirm")
+        .text("\u274C Cancel", "receipt_cancel");
+
+      await ctx.reply(message, { reply_markup: keyboard });
+    } catch (error) {
+      console.error("Receipt photo processing failed:", error);
+      await ctx.reply(
+        "\u274C Failed to process the receipt photo. Please try again.\n\n" +
+        "If the problem persists, try sending a clearer photo."
+      );
+    }
   });
 
   // ─── Text Message Handler (expense entry) ─────────────────────────
