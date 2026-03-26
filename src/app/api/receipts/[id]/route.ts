@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 // GET /api/receipts/[id] — get a single receipt with parsed data and linked transactions
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await getCurrentUser();
+  await requireUser();
   const { id } = await params;
 
   const receipt = await db.receipt.findUnique({
@@ -55,7 +55,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await getCurrentUser();
+  await requireUser();
   const { id } = await params;
 
   const receipt = await db.receipt.findUnique({ where: { id } });

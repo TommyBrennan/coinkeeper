@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { AccountCard } from "@/components/account-card";
 import Link from "next/link";
 
@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function AccountsPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const accounts = await db.account.findMany({
     where: { userId: user.id, isArchived: false },

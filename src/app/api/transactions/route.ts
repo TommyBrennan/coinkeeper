@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 // GET /api/transactions — list transactions with optional filters
 export async function GET(request: NextRequest) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { searchParams } = new URL(request.url);
 
   const type = searchParams.get("type"); // expense, income, transfer
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/transactions — create expense or income
 export async function POST(request: NextRequest) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const body = await request.json();
 
   const {

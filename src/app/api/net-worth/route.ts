@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 import { fetchExchangeRate } from "@/lib/exchange-rate";
 
-const DEMO_USER_ID = "demo-user";
-
 export async function GET(request: NextRequest) {
+  const user = await requireUser();
   const baseCurrency = (
     request.nextUrl.searchParams.get("baseCurrency") || "USD"
   ).toUpperCase();
 
   try {
     const accounts = await db.account.findMany({
-      where: { userId: DEMO_USER_ID, isArchived: false },
+      where: { userId: user.id, isArchived: false },
     });
 
     // Group balances by currency

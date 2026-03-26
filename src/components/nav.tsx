@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { getSession } from "@/lib/session";
 
-export function Nav() {
+export async function Nav() {
+  const session = await getSession();
+
+  // Don't render nav for unauthenticated users
+  if (!session) return null;
+
   return (
     <header className="border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -69,6 +75,9 @@ export function Nav() {
           >
             Categories
           </Link>
+          <span className="ml-2 text-xs text-gray-400 dark:text-gray-500 hidden sm:inline">
+            {session.user.name}
+          </span>
         </nav>
       </div>
     </header>

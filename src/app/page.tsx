@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 import { formatMoney, accountTypeLabel } from "@/lib/format";
 import { NetWorthSummary } from "@/components/net-worth-summary";
 
 export const dynamic = "force-dynamic";
-
-const DEMO_USER_ID = "demo-user";
 
 const typeIcons: Record<string, string> = {
   cash: "💵",
@@ -34,13 +33,15 @@ const categoryEmojis: Record<string, string> = {
 };
 
 export default async function Dashboard() {
+  const user = await requireUser();
+
   const [accounts, recentTransactions] = await Promise.all([
     db.account.findMany({
-      where: { userId: DEMO_USER_ID, isArchived: false },
+      where: { userId: user.id, isArchived: false },
       orderBy: { createdAt: "desc" },
     }),
     db.transaction.findMany({
-      where: { userId: DEMO_USER_ID },
+      where: { userId: user.id },
       orderBy: { date: "desc" },
       take: 10,
       include: {

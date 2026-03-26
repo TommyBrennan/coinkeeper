@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 // GET /api/accounts — list all accounts for the current user
 export async function GET() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const accounts = await db.account.findMany({
     where: { userId: user.id },
@@ -16,7 +16,7 @@ export async function GET() {
 
 // POST /api/accounts — create a new account
 export async function POST(request: NextRequest) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const body = await request.json();
   const { name, type, currency, balance, icon, color } = body;

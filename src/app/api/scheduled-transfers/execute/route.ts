@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { executeDueScheduledTransfers } from "@/lib/execute-scheduled-transfer";
 
 // POST /api/scheduled-transfers/execute — execute all due scheduled transfers
 export async function POST() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const result = await executeDueScheduledTransfers(user.id);
 

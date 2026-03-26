@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { parseReceiptImage, ParsedReceipt } from "@/lib/receipt-parser";
 
 const ALLOWED_MIME: Record<string, "image/jpeg" | "image/png" | "image/webp" | "image/gif"> = {
@@ -18,7 +18,7 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await getCurrentUser();
+  await requireUser();
   const { id } = await params;
 
   const receipt = await db.receipt.findUnique({ where: { id } });
