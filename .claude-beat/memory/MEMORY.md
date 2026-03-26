@@ -37,40 +37,33 @@
 - Core execution logic at `src/lib/execute-scheduled-transfer.ts`
 - AI categorization at `src/lib/categorize.ts`
 - Category normalization at `src/lib/category-normalize.ts`
-- Nav has Accounts, Transactions, Income, Transfer, Schedules, Receipts, Categories links
+- Authentication complete: WebAuthn registration + login, session management, logout (PRs #52, #53 merged)
+- Shared spaces: Space/SpaceMember models in schema, CRUD API + UI complete (PR #58)
+  - `/spaces` list, `/spaces/new` create, `/spaces/[id]` detail, `/spaces/[id]/edit` rename
+  - DeleteSpaceButton component with owner-only protection
+- Nav has Accounts, Transactions, Income, Transfer, Schedules, Receipts, Categories, Spaces links
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
 - Build passes, lint passes
 
 ## Open PRs
-- #49: Net worth aggregation with currency conversion (feat/net-worth-aggregation)
+- #58: Space CRUD API and management UI (feat/space-crud)
 
-## Closed Issues
-- #19: Account CRUD API and list page
-- #20: Account create/edit form
-- #24: Transaction CRUD API and list page (PR #25 merged)
-- #2: Transfers between accounts (PR #26 merged)
-- #4: Income tracking (PR #27 merged)
-- #28: Dashboard home page (PR #29 merged)
-- #30: Scheduled transfers data model + CRUD API (PR #33 merged)
-- #31: Scheduled transfers list and create/edit UI (PR #34 merged)
-- #32: Scheduled transfers execution engine (PR #35 merged)
-- #3: Scheduled transfers (parent — all sub-issues complete)
-- #36: AI categorization API endpoint (PR #39 merged)
-- #37: AI auto-suggest in transaction form (PR #41 merged)
-- #38: Category normalization and dedup (PR #42 merged)
-- #5: AI-powered expense categorization (parent — all sub-issues complete)
-- #43: Receipt upload API and AI parsing (PR #46 merged)
-- #44: Receipt upload UI and transaction creation (PR #47 merged)
-- #45: Receipt history page (PR #48 merged)
-- #6: Receipt photo expense tracking (parent — all sub-issues complete)
-- #21: Net worth aggregation (PR #49 open)
-- #1: Multi-account management (parent — all sub-issues complete)
+## Closed Issues (recent)
+- #7: Web interface / dashboard (closed — functional)
+- #8: Authentication / WebAuthn (closed — registration + login + session complete)
+- #9: Shared spaces (decomposed into #54-#57)
+- #54: Space CRUD API + list/create UI (via PR #58)
+- #51: Auth login + nav integration (PR #53 merged)
+- #50: Auth registration (PR #52 merged)
+- #21: Net worth aggregation (PR #49 merged)
+- (earlier issues — see git log)
 
 ## Open Issues — P0
-- #7: Web interface / dashboard (partially done — basic dashboard merged)
-- #8: Authentication / WebAuthn
-- #9: Shared spaces
-- #10: Telegram bot interface
+- #55: Space member management — invite, remove, roles
+- #56: Space context switcher + space-scoped accounts
+- #57: Space-scoped transactions + role-based permissions
+- #10: Telegram bot interface (needs decomposition)
+- #40: Docker deploy (needs-human)
 
 ## Open Issues — P1
 - #11: Rich analytics dashboard
@@ -96,7 +89,7 @@
 - ANTHROPIC_API_KEY needed for AI categorization and receipt parsing (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #49 if no objections
-2. Pick next P0 issue — likely #8 (Authentication/WebAuthn) which needs decomposition first
-3. #7 (Web interface) may be closeable if dashboard + net worth covers it, or needs analytics/settings
-4. Large P0 features (#8, #9, #10) all need decomposition before implementation
+1. Merge PR #58 if no objections
+2. Pick up #55 (Space member management — invite, remove, roles)
+3. Docker deployment still blocked (#40 — needs-human)
+4. After spaces complete, decompose #10 (Telegram Bot)
