@@ -1,7 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+  Legend,
+} from "recharts";
 import { formatMoney } from "@/lib/format";
 
 interface ProductLatestPrice {
@@ -292,6 +304,7 @@ function PriceHistoryPanel({ productId }: { productId: string }) {
   }
 
   const currency = data.prices[0]?.currency || "USD";
+  const showCharts = data.prices.length >= 2;
 
   return (
     <div className="px-4 py-4 bg-gray-50 dark:bg-gray-900/30 border-t border-gray-100 dark:border-gray-800">
@@ -309,6 +322,11 @@ function PriceHistoryPanel({ productId }: { productId: string }) {
           }
         />
       </div>
+
+      {/* Charts */}
+      {showCharts && (
+        <PriceTrendCharts prices={data.prices} stats={data.stats} currency={currency} />
+      )}
 
       {/* Price history table */}
       {data.prices.length > 0 && (
@@ -344,6 +362,205 @@ function PriceHistoryPanel({ productId }: { productId: string }) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const STORE_COLORS = [
+  "#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6",
+  "#ec4899", "#14b8a6", "#f97316", "#6366f1", "#84cc16",
+];
+
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+interface TrendDataPoint {
+  date: string;
+  [merchant: string]: number | string | null;
+}
+
+interface StoreAvg {
+  merchant: string;
+  avgPrice: number;
+  count: number;
+}
+
+function PriceTrendCharts({
+  prices,
+  stats,
+  currency,
+}: {
+  prices: PriceEntry[];
+  stats: PriceStats;
+  currency: string;
+}) {
+  const merchants = useMemo(() => {
+    const unique = [...new Set(prices.map((p) => p.merchant || "Unknown"))];
+    return unique;
+  }, [prices]);
+
+  // Build line chart data: one point per date, with price values keyed by merchant
+  const trendData = useMemo(() => {
+    // Group prices by date
+    const byDate = new Map<string, Map<string, number>>();
+    // Sort chronologically
+    const sorted = [...prices].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    for (const p of sorted) {
+      const dateKey = new Date(p.date).toISOString().split("T")[0];
+      const merchant = p.merchant || "Unknown";
+      if (!byDate.has(dateKey)) byDate.set(dateKey, new Map());
+      // If multiple entries for same store on same date, use the latest
+      byDate.get(dateKey)!.set(merchant, p.unitPrice);
+    }
+
+    const points: TrendDataPoint[] = [];
+    for (const [date, merchantPrices] of byDate) {
+      const point: TrendDataPoint = { date };
+      for (const m of merchants) {
+        point[m] = merchantPrices.get(m) ?? null;
+      }
+      points.push(point);
+    }
+    return points;
+  }, [prices, merchants]);
+
+  // Build store comparison data
+  const storeData = useMemo(() => {
+    if (stats.merchantCount < 2) return [];
+
+    const sums = new Map<string, { total: number; count: number }>();
+    for (const p of prices) {
+      const m = p.merchant || "Unknown";
+      const entry = sums.get(m) || { total: 0, count: 0 };
+      entry.total += p.unitPrice;
+      entry.count += 1;
+      sums.set(m, entry);
+    }
+
+    const result: StoreAvg[] = [];
+    for (const [merchant, { total, count }] of sums) {
+      result.push({
+        merchant,
+        avgPrice: Math.round((total / count) * 100) / 100,
+        count,
+      });
+    }
+    return result.sort((a, b) => a.avgPrice - b.avgPrice);
+  }, [prices, stats.merchantCount]);
+
+  return (
+    <div className="space-y-4 mb-4">
+      {/* Price trend line chart */}
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4">
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+          Price Trend
+        </h4>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={trendData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 11, fill: "#9ca3af" }}
+              tickLine={false}
+              axisLine={{ stroke: "#e5e7eb", opacity: 0.3 }}
+              tickFormatter={formatDateLabel}
+            />
+            <YAxis
+              tickFormatter={(v) => formatMoney(v, currency)}
+              tick={{ fontSize: 11, fill: "#9ca3af" }}
+              tickLine={false}
+              axisLine={false}
+              width={70}
+              domain={["auto", "auto"]}
+            />
+            <Tooltip
+              formatter={(value) => [formatMoney(Number(value), currency), ""]}
+              labelFormatter={(label) => formatDateLabel(label as string)}
+              contentStyle={{
+                backgroundColor: "var(--color-gray-950, #030712)",
+                border: "1px solid var(--color-gray-800, #1f2937)",
+                borderRadius: "8px",
+                color: "var(--color-gray-100, #f3f4f6)",
+                fontSize: "13px",
+              }}
+            />
+            {merchants.length > 1 && (
+              <Legend
+                verticalAlign="top"
+                height={28}
+                wrapperStyle={{ fontSize: "12px" }}
+              />
+            )}
+            {merchants.map((merchant, i) => (
+              <Line
+                key={merchant}
+                type="monotone"
+                dataKey={merchant}
+                name={merchant}
+                stroke={STORE_COLORS[i % STORE_COLORS.length]}
+                strokeWidth={2}
+                dot={{ r: 3, fill: STORE_COLORS[i % STORE_COLORS.length] }}
+                activeDot={{ r: 5 }}
+                connectNulls={false}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Store comparison bar chart */}
+      {storeData.length >= 2 && (
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-950 p-4">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            Average Price by Store
+          </h4>
+          <ResponsiveContainer width="100%" height={Math.max(120, storeData.length * 44)}>
+            <BarChart
+              data={storeData}
+              layout="vertical"
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.3} horizontal={false} />
+              <XAxis
+                type="number"
+                tickFormatter={(v) => formatMoney(v, currency)}
+                tick={{ fontSize: 11, fill: "#9ca3af" }}
+                tickLine={false}
+                axisLine={{ stroke: "#e5e7eb", opacity: 0.3 }}
+              />
+              <YAxis
+                type="category"
+                dataKey="merchant"
+                tick={{ fontSize: 12, fill: "#9ca3af" }}
+                tickLine={false}
+                axisLine={false}
+                width={100}
+              />
+              <Tooltip
+                formatter={(value) => [formatMoney(Number(value), currency), "Avg Price"]}
+                contentStyle={{
+                  backgroundColor: "var(--color-gray-950, #030712)",
+                  border: "1px solid var(--color-gray-800, #1f2937)",
+                  borderRadius: "8px",
+                  color: "var(--color-gray-100, #f3f4f6)",
+                  fontSize: "13px",
+                }}
+              />
+              <Bar
+                dataKey="avgPrice"
+                radius={[0, 4, 4, 0]}
+                fill="#10b981"
+                maxBarSize={32}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
     </div>
