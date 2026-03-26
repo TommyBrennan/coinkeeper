@@ -31,6 +31,7 @@ model User {
   products         Product[]
   notifications    Notification[]
   pushSubscriptions PushSubscription[]
+  savedReports     SavedReport[]
 }
 
 // ─── WebAuthn Credentials ────────────────────────────────────────────
@@ -351,6 +352,24 @@ model SpaceMember {
 
   @@unique([userId, spaceId])
   @@index([spaceId])
+}
+
+// ─── Saved Reports ─────────────────────────────────────────────────
+
+model SavedReport {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  format      String   @default("csv") // csv, json
+  filters     String   // JSON: { type?, accountId?, categoryId?, from?, to?, periodPreset? }
+  lastRunAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ─── Exchange Rate History ──────────────────────────────────────────
