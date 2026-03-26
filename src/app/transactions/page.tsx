@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getSpaceContext, getSpaceAccountIds } from "@/lib/space-context";
 import { TransactionCard } from "@/components/transaction-card";
 import { ExportButton } from "@/components/export-button";
+import { ImportButton } from "@/components/import-button";
 import Link from "next/link";
 
 export const metadata = {
@@ -111,6 +112,7 @@ export default async function TransactionsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {canCreate && <ImportButton />}
           {transactions.length > 0 && <ExportButton />}
           {canCreate && (
             <Link
