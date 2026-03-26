@@ -25,7 +25,9 @@
 - Next.js 16 route handlers: `params` is a Promise, must `await params` in dynamic routes
 - Auth: WebAuthn passkeys via @simplewebauthn v13, httpOnly cookie sessions
 - `requireUser()` uses Next.js `redirect()` — works in server components and route handlers
-- `getCurrentUser()` returns null if no session; `requireUser()` redirects to /auth/register
+- `getCurrentUser()` returns null if no session; `requireUser()` redirects to /auth/login
 - Middleware at `src/middleware.ts` checks `ck_session` cookie, redirects if missing
 - WebAuthn RP config via env vars: WEBAUTHN_RP_ID, WEBAUTHN_ORIGIN (defaults to localhost:3000)
 - `gh pr edit --add-project` fails due to missing `read:org` scope on token
+- WebAuthn `allowCredentials.id` must be a string (base64url), not Buffer — simplewebauthn v13 expects string IDs
+- Docker CLI v29.3.1 installed but daemon not running (no /var/run/docker.sock) — deploy blocked
