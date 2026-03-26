@@ -3,6 +3,8 @@ import { requireUser } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DeleteSpaceButton } from "@/components/delete-space-button";
+import { InviteMemberForm } from "@/components/invite-member-form";
+import { MemberActions } from "@/components/member-actions";
 
 const roleColors: Record<string, string> = {
   owner:
@@ -60,6 +62,7 @@ export default async function SpaceDetailPage({
   }
 
   const isOwner = membership.role === "owner";
+  const canInvite = membership.role !== "viewer";
 
   return (
     <main className="flex-1 w-full max-w-3xl mx-auto px-4 py-8">
@@ -121,9 +124,22 @@ export default async function SpaceDetailPage({
 
       {/* Members Section */}
       <section className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-          Members
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            Members
+          </h2>
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            Your role: <span className="font-medium">{membership.role}</span>
+          </span>
+        </div>
+
+        {/* Invite form — owners and editors can invite */}
+        {canInvite && (
+          <div className="mb-4">
+            <InviteMemberForm spaceId={space.id} callerRole={membership.role} />
+          </div>
+        )}
+
         <div className="space-y-2">
           {space.members.map((member) => (
             <div
@@ -148,11 +164,22 @@ export default async function SpaceDetailPage({
                   </p>
                 </div>
               </div>
-              <span
-                className={`text-xs font-medium px-2 py-0.5 rounded-full ${roleColors[member.role] || roleColors.viewer}`}
-              >
-                {member.role}
-              </span>
+
+              {isOwner ? (
+                <MemberActions
+                  spaceId={space.id}
+                  memberId={member.id}
+                  memberName={member.user.name}
+                  memberRole={member.role}
+                  isCurrentUser={member.user.id === user.id}
+                />
+              ) : (
+                <span
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${roleColors[member.role] || roleColors.viewer}`}
+                >
+                  {member.role}
+                </span>
+              )}
             </div>
           ))}
         </div>
