@@ -16,6 +16,17 @@
 - Return `currency` field based on most common transaction currency
 - Return structured data arrays sorted chronologically
 
+## Telegram Bot Patterns
+- Bot framework: grammy v1.41.1, webhook mode via `webhookCallback(bot, "std/http")`
+- User lookup: `getUserByChatId(chatId)` → TelegramLink → User
+- `requireLinkedUser(ctx)` returns `{userId, userName}` or null (with auto-reply)
+- Commands registered in `registerHandlers(bot)` in `src/lib/telegram.ts`
+- For multi-step flows (e.g. account selection), use in-memory Map keyed by chatId with auto-expiry
+- Inline keyboards via `new InlineKeyboard()` — handle responses in `bot.on("callback_query:data")`
+- Transaction creation: use `db.$transaction()` directly (server-side, not via API routes)
+- AI categorization: reuse `categorizeTransaction()` from `src/lib/categorize.ts`
+- New categories from AI get auto-created; handle unique constraint race with fallback findFirst
+
 ## Build Verification
 - Always run `npm run lint` then `npm run build` before committing
 - Build catches TypeScript errors that lint misses
