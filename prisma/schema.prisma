@@ -27,6 +27,7 @@ model User {
   telegramLink     TelegramLink?
   telegramLinkCodes TelegramLinkCode[]
   products         Product[]
+  notifications    Notification[]
 }
 
 // ─── WebAuthn Credentials ────────────────────────────────────────────
@@ -285,6 +286,28 @@ model TelegramLinkCode {
   @@index([code])
 }
 
+// ─── Notifications ──────────────────────────────────────────────────
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  spaceId   String?
+  type      String   // low_balance, unusual_spending, expense_reminder, transfer_confirmation, system
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  priority  String   @default("medium") // high, medium, low
+  metadata  String?  // JSON for extra data (accountId, amount, etc.)
+  createdAt DateTime @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  space Space? @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+  @@index([spaceId])
+}
+
 // ─── Shared Spaces ───────────────────────────────────────────────────
 
 model Space {
@@ -293,8 +316,9 @@ model Space {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members  SpaceMember[]
-  accounts Account[]
+  members       SpaceMember[]
+  accounts      Account[]
+  notifications Notification[]
 }
 
 model SpaceMember {
