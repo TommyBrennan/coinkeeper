@@ -19,7 +19,7 @@ export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) {
     // In server components, redirect to login
-    redirect("/auth/register");
+    redirect("/auth/login");
   }
   return user;
 }

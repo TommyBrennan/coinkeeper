@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * Middleware to protect routes.
- * Redirects unauthenticated users to /auth/register.
+ * Redirects unauthenticated users to /auth/login.
  * Auth pages and API routes for auth are excluded.
  */
 export function middleware(req: NextRequest) {
@@ -25,7 +25,7 @@ export function middleware(req: NextRequest) {
   // Check for session cookie
   const sessionToken = req.cookies.get("ck_session")?.value;
   if (!sessionToken) {
-    const loginUrl = new URL("/auth/register", req.url);
+    const loginUrl = new URL("/auth/login", req.url);
     return NextResponse.redirect(loginUrl);
   }
 
