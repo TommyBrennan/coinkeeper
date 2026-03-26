@@ -148,6 +148,46 @@ export async function executeScheduledTransfer(
   // Check low balance on source account (fire and forget)
   checkLowBalance(schedule.fromAccountId).catch(() => {});
 
+  // Create transfer confirmation notification
+  const fromName = schedule.fromAccount.name;
+  const toName = schedule.toAccount.name;
+  const fromCurrency = schedule.fromAccount.currency;
+  const toCurrency = schedule.toAccount.currency;
+  const isCrossCurrency = fromCurrency !== toCurrency;
+
+  let message = `Transferred ${fromCurrency} ${schedule.amount.toFixed(2)} from ${fromName} to ${toName}.`;
+  if (isCrossCurrency) {
+    message += ` Received ${toCurrency} ${toAmount.toFixed(2)} (rate: ${exchangeRate.toFixed(4)}).`;
+  }
+  if (deactivated) {
+    message += " This was the final scheduled execution — the schedule is now complete.";
+  } else {
+    message += ` Next execution: ${nextExecution.toLocaleDateString()}.`;
+  }
+
+  db.notification
+    .create({
+      data: {
+        userId,
+        spaceId: schedule.fromAccount.spaceId,
+        type: "transfer_confirmation",
+        title: `Scheduled transfer executed: ${fromName} → ${toName}`,
+        message,
+        priority: "medium",
+        metadata: JSON.stringify({
+          scheduleId: schedule.id,
+          transactionId: result.id,
+          fromAccountId: schedule.fromAccountId,
+          toAccountId: schedule.toAccountId,
+          amount: schedule.amount,
+          toAmount,
+          exchangeRate,
+          deactivated,
+        }),
+      },
+    })
+    .catch(() => {});
+
   return {
     scheduleId: schedule.id,
     transactionId: result.id,
