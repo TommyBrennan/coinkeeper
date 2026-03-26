@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { formatMoney, accountTypeLabel } from "@/lib/format";
 import { NetWorthSummary } from "@/components/net-worth-summary";
+import { QuickAdd } from "@/components/quick-add";
 import { getSpaceContext } from "@/lib/space-context";
 
 export const dynamic = "force-dynamic";
@@ -133,6 +134,21 @@ export default async function Dashboard() {
             </div>
           )}
         </section>
+
+        {/* Quick Add — Natural Language Entry */}
+        {hasAccounts && canEdit && (
+          <section>
+            <QuickAdd
+              accounts={accounts.map((a) => ({
+                id: a.id,
+                name: a.name,
+                type: a.type,
+                currency: a.currency,
+                balance: a.balance,
+              }))}
+            />
+          </section>
+        )}
 
         {/* Quick Actions */}
         {hasAccounts && canEdit && (
