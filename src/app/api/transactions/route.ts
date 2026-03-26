@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
+import { getSpaceContext, checkSpacePermission, getSpaceAccountIds } from "@/lib/space-context";
 
 // GET /api/transactions — list transactions with optional filters
 export async function GET(request: NextRequest) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const context = await getSpaceContext(user.id);
   const { searchParams } = new URL(request.url);
 
   const type = searchParams.get("type"); // expense, income, transfer
@@ -14,12 +20,42 @@ export async function GET(request: NextRequest) {
   const limit = parseInt(searchParams.get("limit") || "50", 10);
   const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-  const where: Record<string, unknown> = { userId: user.id };
+  const where: Record<string, unknown> = {};
+
+  if (context.spaceId) {
+    // Space context — show transactions on space accounts
+    const spaceAccountIds = await getSpaceAccountIds(context.spaceId);
+    if (spaceAccountIds.length === 0) {
+      return NextResponse.json({ transactions: [], total: 0 });
+    }
+    where.OR = [
+      { fromAccountId: { in: spaceAccountIds } },
+      { toAccountId: { in: spaceAccountIds } },
+    ];
+
+    // If filtering by specific account, ensure it's a space account
+    if (accountId) {
+      if (!spaceAccountIds.includes(accountId)) {
+        return NextResponse.json({ transactions: [], total: 0 });
+      }
+      where.OR = [{ fromAccountId: accountId }, { toAccountId: accountId }];
+    }
+  } else {
+    // Personal context
+    where.userId = user.id;
+    if (accountId) {
+      where.OR = [{ fromAccountId: accountId }, { toAccountId: accountId }];
+      // Remove top-level userId and combine with account filter
+      delete where.userId;
+      where.AND = [
+        { userId: user.id },
+        { OR: [{ fromAccountId: accountId }, { toAccountId: accountId }] },
+      ];
+      delete where.OR;
+    }
+  }
 
   if (type) where.type = type;
-  if (accountId) {
-    where.OR = [{ fromAccountId: accountId }, { toAccountId: accountId }];
-  }
   if (from || to) {
     where.date = {};
     if (from) (where.date as Record<string, unknown>).gte = new Date(from);
@@ -46,7 +82,24 @@ export async function GET(request: NextRequest) {
 
 // POST /api/transactions — create expense or income
 export async function POST(request: NextRequest) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const context = await getSpaceContext(user.id);
+
+  // Enforce role-based permissions in space context
+  if (context.spaceId) {
+    const perm = await checkSpacePermission(user.id, context.spaceId, "editor");
+    if (!perm.allowed) {
+      return NextResponse.json(
+        { error: "Viewers cannot create transactions in this space" },
+        { status: 403 }
+      );
+    }
+  }
+
   const body = await request.json();
 
   const {
@@ -83,12 +136,26 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Validate account ownership
+  // Validate account access (personal or space-scoped)
   if (fromAccountId) {
     const account = await db.account.findFirst({
-      where: { id: fromAccountId, userId: user.id },
+      where: { id: fromAccountId },
     });
     if (!account) {
+      return NextResponse.json(
+        { error: "Source account not found" },
+        { status: 404 }
+      );
+    }
+    // Check ownership: must be user's personal account or belong to current space
+    if (context.spaceId) {
+      if (account.spaceId !== context.spaceId) {
+        return NextResponse.json(
+          { error: "Source account does not belong to this space" },
+          { status: 403 }
+        );
+      }
+    } else if (account.userId !== user.id) {
       return NextResponse.json(
         { error: "Source account not found" },
         { status: 404 }
@@ -98,9 +165,22 @@ export async function POST(request: NextRequest) {
 
   if (toAccountId) {
     const account = await db.account.findFirst({
-      where: { id: toAccountId, userId: user.id },
+      where: { id: toAccountId },
     });
     if (!account) {
+      return NextResponse.json(
+        { error: "Destination account not found" },
+        { status: 404 }
+      );
+    }
+    if (context.spaceId) {
+      if (account.spaceId !== context.spaceId) {
+        return NextResponse.json(
+          { error: "Destination account does not belong to this space" },
+          { status: 403 }
+        );
+      }
+    } else if (account.userId !== user.id) {
       return NextResponse.json(
         { error: "Destination account not found" },
         { status: 404 }
@@ -142,19 +222,17 @@ export async function POST(request: NextRequest) {
 
   if (type === "transfer" && fromAccountId && toAccountId) {
     const fromAcc = await db.account.findFirst({
-      where: { id: fromAccountId, userId: user.id },
+      where: { id: fromAccountId },
     });
     const toAcc = await db.account.findFirst({
-      where: { id: toAccountId, userId: user.id },
+      where: { id: toAccountId },
     });
 
     if (fromAcc && toAcc) {
       if (fromAcc.currency === toAcc.currency) {
-        // Same currency: 1:1 transfer
         computedExchangeRate = 1;
         computedToAmount = amount;
       } else if (toAmount && typeof toAmount === "number" && toAmount > 0) {
-        // Mode 3: final amount specified
         computedToAmount = toAmount;
         computedExchangeRate = toAmount / amount;
       } else if (
@@ -162,11 +240,9 @@ export async function POST(request: NextRequest) {
         typeof exchangeRate === "number" &&
         exchangeRate > 0
       ) {
-        // Mode 2: manual rate specified
         computedExchangeRate = exchangeRate;
         computedToAmount = amount * exchangeRate;
       } else {
-        // Mode 1: should have been resolved client-side, but fallback
         computedExchangeRate = 1;
         computedToAmount = amount;
       }
@@ -183,7 +259,6 @@ export async function POST(request: NextRequest) {
     } else if (recurringFrequency === "weekly") {
       nextExecution.setDate(nextExecution.getDate() + 7);
     } else {
-      // monthly
       nextExecution.setMonth(nextExecution.getMonth() + 1);
     }
 
@@ -238,14 +313,12 @@ export async function POST(request: NextRequest) {
         data: { balance: { increment: amount } },
       });
     } else if (type === "transfer") {
-      // Deduct from source in source currency
       if (fromAccountId) {
         await tx.account.update({
           where: { id: fromAccountId },
           data: { balance: { decrement: amount } },
         });
       }
-      // Credit destination with the converted amount
       if (toAccountId && computedToAmount !== null) {
         await tx.account.update({
           where: { id: toAccountId },

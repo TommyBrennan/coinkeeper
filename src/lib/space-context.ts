@@ -41,6 +41,50 @@ export async function getSpaceContext(userId: string): Promise<SpaceContext> {
 }
 
 /**
+ * Check if a user has the required minimum role in a space.
+ * Role hierarchy: owner > editor > viewer.
+ * Returns the membership if allowed, null otherwise.
+ */
+const ROLE_LEVELS: Record<string, number> = {
+  viewer: 0,
+  editor: 1,
+  owner: 2,
+};
+
+export async function checkSpacePermission(
+  userId: string,
+  spaceId: string,
+  requiredRole: "viewer" | "editor" | "owner" = "viewer"
+): Promise<{ allowed: boolean; role: string | null }> {
+  const membership = await db.spaceMember.findUnique({
+    where: { userId_spaceId: { userId, spaceId } },
+  });
+
+  if (!membership) {
+    return { allowed: false, role: null };
+  }
+
+  const userLevel = ROLE_LEVELS[membership.role] ?? -1;
+  const requiredLevel = ROLE_LEVELS[requiredRole] ?? 0;
+
+  return {
+    allowed: userLevel >= requiredLevel,
+    role: membership.role,
+  };
+}
+
+/**
+ * Get all account IDs belonging to a space.
+ */
+export async function getSpaceAccountIds(spaceId: string): Promise<string[]> {
+  const accounts = await db.account.findMany({
+    where: { spaceId },
+    select: { id: true },
+  });
+  return accounts.map((a) => a.id);
+}
+
+/**
  * Set the active space context cookie.
  * Pass null to switch to personal context.
  */
