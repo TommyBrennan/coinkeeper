@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { getSpaceContext, getSpaceAccountIds } from "@/lib/space-context";
 import { TransactionCard } from "@/components/transaction-card";
+import { ExportButton } from "@/components/export-button";
 import Link from "next/link";
 
 export const metadata = {
@@ -109,27 +110,30 @@ export default async function TransactionsPage() {
               : `${transactions.length} transaction${transactions.length === 1 ? "" : "s"}`}
           </p>
         </div>
-        {canCreate && (
-          <Link
-            href="/transactions/new"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-              stroke="currentColor"
+        <div className="flex items-center gap-2">
+          {transactions.length > 0 && <ExportButton />}
+          {canCreate && (
+            <Link
+              href="/transactions/new"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 4.5v15m7.5-7.5h-15"
-              />
-            </svg>
-            Add Transaction
-          </Link>
-        )}
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2}
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              Add Transaction
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Transaction List */}
