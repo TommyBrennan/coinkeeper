@@ -24,6 +24,8 @@ model User {
   scheduledTransfers ScheduledTransfer[]
 
   spaceMemberships SpaceMember[]
+  telegramLink     TelegramLink?
+  telegramLinkCodes TelegramLinkCode[]
 }
 
 // ─── WebAuthn Credentials ────────────────────────────────────────────
@@ -219,6 +221,31 @@ model CategoryCorrection {
 
   @@index([userId])
   @@index([description])
+}
+
+// ─── Telegram Linking ────────────────────────────────────────────────
+
+model TelegramLink {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  chatId    String   @unique
+  username  String?  // Telegram username for display
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TelegramLinkCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([code])
 }
 
 // ─── Shared Spaces ───────────────────────────────────────────────────
