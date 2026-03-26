@@ -73,7 +73,8 @@ model Account {
   balance   Float    @default(0)
   icon      String?
   color     String?
-  isArchived Boolean @default(false)
+  isArchived        Boolean @default(false)
+  lowBalanceThreshold Float?  // nullable — when set, triggers low_balance notification
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

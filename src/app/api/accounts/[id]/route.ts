@@ -38,7 +38,7 @@ export async function PATCH(
   }
 
   const body = await request.json();
-  const { name, type, currency, balance, icon, color, isArchived } = body;
+  const { name, type, currency, balance, icon, color, isArchived, lowBalanceThreshold } = body;
 
   const validTypes = ["cash", "bank", "wallet", "credit"];
   if (type !== undefined && !validTypes.includes(type)) {
@@ -58,6 +58,10 @@ export async function PATCH(
       ...(icon !== undefined && { icon }),
       ...(color !== undefined && { color }),
       ...(isArchived !== undefined && { isArchived }),
+      ...(lowBalanceThreshold !== undefined && {
+        lowBalanceThreshold:
+          lowBalanceThreshold === null ? null : parseFloat(lowBalanceThreshold),
+      }),
     },
   });
 

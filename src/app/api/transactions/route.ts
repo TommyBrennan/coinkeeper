@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { getSpaceContext, checkSpacePermission, getSpaceAccountIds } from "@/lib/space-context";
+import { checkLowBalance } from "@/lib/check-low-balance";
 
 // GET /api/transactions — list transactions with optional filters
 export async function GET(request: NextRequest) {
@@ -329,6 +330,17 @@ export async function POST(request: NextRequest) {
 
     return txn;
   });
+
+  // Check low balance warnings (fire and forget — don't block response)
+  const accountsToCheck: string[] = [];
+  if (type === "expense" && fromAccountId) accountsToCheck.push(fromAccountId);
+  if (type === "transfer") {
+    if (fromAccountId) accountsToCheck.push(fromAccountId);
+  }
+  // Run checks asynchronously
+  for (const accId of accountsToCheck) {
+    checkLowBalance(accId).catch(() => {});
+  }
 
   return NextResponse.json(transaction, { status: 201 });
 }

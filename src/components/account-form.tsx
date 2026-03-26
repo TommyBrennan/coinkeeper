@@ -25,6 +25,7 @@ interface AccountFormProps {
     balance: number;
     icon: string | null;
     color: string | null;
+    lowBalanceThreshold: number | null;
   };
 }
 
@@ -39,6 +40,9 @@ export function AccountForm({ initialData }: AccountFormProps) {
     initialData?.balance?.toString() ?? "0"
   );
   const [color, setColor] = useState(initialData?.color ?? "#10b981");
+  const [lowBalanceThreshold, setLowBalanceThreshold] = useState(
+    initialData?.lowBalanceThreshold?.toString() ?? ""
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,6 +71,9 @@ export function AccountForm({ initialData }: AccountFormProps) {
           currency,
           balance: parseFloat(balance) || 0,
           color,
+          lowBalanceThreshold: lowBalanceThreshold.trim()
+            ? parseFloat(lowBalanceThreshold)
+            : null,
         }),
       });
 
@@ -197,6 +204,31 @@ export function AccountForm({ initialData }: AccountFormProps) {
             {color}
           </span>
         </div>
+      </div>
+
+      {/* Low Balance Alert */}
+      <div>
+        <label
+          htmlFor="lowBalanceThreshold"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5"
+        >
+          Low Balance Alert
+        </label>
+        <div className="flex items-center gap-3">
+          <input
+            id="lowBalanceThreshold"
+            type="number"
+            step="0.01"
+            min="0"
+            value={lowBalanceThreshold}
+            onChange={(e) => setLowBalanceThreshold(e.target.value)}
+            placeholder="No alert"
+            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent tabular-nums"
+          />
+        </div>
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          Get notified when balance drops below this amount. Leave empty to disable.
+        </p>
       </div>
 
       {/* Actions */}

@@ -6,6 +6,7 @@
 import { db } from "@/lib/db";
 import { fetchExchangeRate } from "@/lib/exchange-rate";
 import { calculateNextExecution } from "@/lib/schedule";
+import { checkLowBalance } from "@/lib/check-low-balance";
 
 export interface ExecutionResult {
   scheduleId: string;
@@ -143,6 +144,9 @@ export async function executeScheduledTransfer(
 
     return txn;
   });
+
+  // Check low balance on source account (fire and forget)
+  checkLowBalance(schedule.fromAccountId).catch(() => {});
 
   return {
     scheduleId: schedule.id,
