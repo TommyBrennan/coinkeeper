@@ -1,5 +1,7 @@
 import { requireUser } from "@/lib/auth";
 import { SpendingByCategory } from "@/components/spending-by-category";
+import { IncomeVsExpenseTrends } from "@/components/income-vs-expense-trends";
+import { BalanceEvolution } from "@/components/balance-evolution";
 
 export default async function AnalyticsPage() {
   await requireUser();
@@ -11,11 +13,15 @@ export default async function AnalyticsPage() {
           Analytics
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Understand your spending patterns
+          Understand your spending patterns and financial trends
         </p>
       </div>
 
-      <SpendingByCategory />
+      <div className="space-y-6">
+        <SpendingByCategory />
+        <IncomeVsExpenseTrends />
+        <BalanceEvolution />
+      </div>
     </div>
   );
 }
