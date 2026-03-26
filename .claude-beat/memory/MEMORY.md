@@ -41,17 +41,24 @@
 - Shared spaces: Space/SpaceMember models in schema, CRUD + member management complete
   - `/spaces` list, `/spaces/new` create, `/spaces/[id]` detail, `/spaces/[id]/edit` rename
   - DeleteSpaceButton component with owner-only protection
-  - Member management: invite by email, change roles, remove members (PR #59)
+  - Member management: invite by email, change roles, remove members (PR #59 merged)
   - InviteMemberForm, MemberActions client components
   - Sole-owner protections: cannot demote/remove last owner
-- Nav has Accounts, Transactions, Income, Transfer, Schedules, Receipts, Categories, Spaces links
+  - Space context switcher: SpaceSwitcher dropdown in nav, cookie-based context (PR #60)
+  - Space-scoped accounts: API filters by active context, role-based create permissions
+  - `src/lib/space-context.ts` — getSpaceContext(), setSpaceContext()
+  - `POST /api/space-context` — sets active space cookie
+  - Dashboard and accounts page are space-aware
+- Nav has Accounts, Transactions, Income, Transfer, Schedules, Receipts, Categories, Spaces links + SpaceSwitcher
 - 16 default categories auto-seeded (11 expense + 5 income + Other)
 - Build passes, lint passes
 
 ## Open PRs
-- #59: Space member management (feat/space-member-management)
+- #60: Space context switcher + space-scoped accounts (feat/space-context-switcher)
 
 ## Closed Issues (recent)
+- #55: Space member management (PR #59 merged)
+- #56: Space context switcher + space-scoped accounts (PR #60)
 - #54: Space CRUD API + list/create UI (PR #58 merged)
 - #7: Web interface / dashboard (closed — functional)
 - #8: Authentication / WebAuthn (closed — registration + login + session complete)
@@ -62,8 +69,6 @@
 - (earlier issues — see git log)
 
 ## Open Issues — P0
-- #55: Space member management — invite, remove, roles
-- #56: Space context switcher + space-scoped accounts
 - #57: Space-scoped transactions + role-based permissions
 - #10: Telegram bot interface (needs decomposition)
 - #40: Docker deploy (needs-human)
@@ -92,8 +97,8 @@
 - ANTHROPIC_API_KEY needed for AI categorization and receipt parsing (graceful degradation without it)
 
 ## Next Session Priority
-1. Merge PR #59 if no objections
-2. Pick up #56 (Space context switcher + space-scoped accounts)
-3. Then #57 (Space-scoped transactions + role-based permissions)
-4. Docker deployment still blocked (#40 — needs-human)
-5. After spaces complete, decompose #10 (Telegram Bot)
+1. Merge PR #60 if no objections
+2. Pick up #57 (Space-scoped transactions + role-based permissions)
+3. After #57, close parent #9 (Shared spaces)
+4. Decompose #10 (Telegram Bot)
+5. Docker deployment still blocked (#40 — needs-human)
