@@ -1,6 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  isPushSupported,
+  getPushPermission,
+  isPushSubscribed,
+  subscribeToPush,
+  unsubscribeFromPush,
+} from "@/lib/push-client";
 
 interface NotificationSettingsProps {
   initialReminderDays: number | null;
@@ -15,6 +22,28 @@ export function NotificationSettings({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Push notification state
+  const [pushSupported, setPushSupported] = useState(false);
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushError, setPushError] = useState<string | null>(null);
+  const [pushPermission, setPushPermission] = useState<string>("default");
+
+  const checkPushStatus = useCallback(async () => {
+    const supported = isPushSupported();
+    setPushSupported(supported);
+
+    if (supported) {
+      setPushPermission(getPushPermission());
+      const subscribed = await isPushSubscribed();
+      setPushEnabled(subscribed);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkPushStatus();
+  }, [checkPushStatus]);
 
   const handleSave = async () => {
     setError(null);
@@ -49,13 +78,105 @@ export function NotificationSettings({
     }
   };
 
+  const handlePushToggle = async () => {
+    setPushError(null);
+    setPushLoading(true);
+
+    try {
+      if (pushEnabled) {
+        await unsubscribeFromPush();
+        setPushEnabled(false);
+      } else {
+        const success = await subscribeToPush();
+        if (success) {
+          setPushEnabled(true);
+        } else {
+          setPushError(
+            "Notification permission was denied. Please allow notifications in your browser settings."
+          );
+        }
+      }
+      setPushPermission(getPushPermission());
+    } catch (err) {
+      setPushError(
+        err instanceof Error ? err.message : "Failed to update push notification settings"
+      );
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
         Notifications
       </h2>
 
-      <div className="space-y-4">
+      <div className="space-y-6">
+        {/* Push Notifications Toggle */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Push notifications
+            </label>
+            {pushSupported && (
+              <button
+                onClick={handlePushToggle}
+                disabled={pushLoading || pushPermission === "denied"}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  pushEnabled
+                    ? "bg-emerald-600"
+                    : "bg-gray-300 dark:bg-gray-600"
+                }`}
+                role="switch"
+                aria-checked={pushEnabled}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    pushEnabled ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            )}
+          </div>
+
+          {!pushSupported && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Push notifications are not supported in this browser.
+            </p>
+          )}
+
+          {pushSupported && pushPermission === "denied" && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Notification permission has been blocked. Please enable notifications in your browser settings to receive push alerts.
+            </p>
+          )}
+
+          {pushSupported && pushPermission !== "denied" && (
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {pushEnabled
+                ? "You will receive browser push notifications for alerts like low balance, unusual spending, and transfer confirmations."
+                : "Enable to receive browser push notifications when you're not actively using CoinKeeper."}
+            </p>
+          )}
+
+          {pushLoading && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {pushEnabled ? "Disabling..." : "Enabling..."}
+            </p>
+          )}
+
+          {pushError && (
+            <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+              {pushError}
+            </p>
+          )}
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-200 dark:border-gray-800" />
+
+        {/* Expense Logging Reminder */}
         <div>
           <label
             htmlFor="reminderDays"

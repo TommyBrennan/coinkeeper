@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { fetchExchangeRate } from "@/lib/exchange-rate";
 import { calculateNextExecution } from "@/lib/schedule";
 import { checkLowBalance } from "@/lib/check-low-balance";
+import { sendPushForNotification } from "@/lib/push-notifications";
 
 export interface ExecutionResult {
   scheduleId: string;
@@ -165,15 +166,18 @@ export async function executeScheduledTransfer(
     message += ` Next execution: ${nextExecution.toLocaleDateString()}.`;
   }
 
+  const title = `Scheduled transfer executed: ${fromName} → ${toName}`;
+  const priority = "medium";
+
   db.notification
     .create({
       data: {
         userId,
         spaceId: schedule.fromAccount.spaceId,
         type: "transfer_confirmation",
-        title: `Scheduled transfer executed: ${fromName} → ${toName}`,
+        title,
         message,
-        priority: "medium",
+        priority,
         metadata: JSON.stringify({
           scheduleId: schedule.id,
           transactionId: result.id,
@@ -185,6 +189,15 @@ export async function executeScheduledTransfer(
           deactivated,
         }),
       },
+    })
+    .then(() => {
+      // Send push notification after in-app notification is created
+      sendPushForNotification(userId, {
+        type: "transfer_confirmation",
+        title,
+        message,
+        priority,
+      }).catch(() => {});
     })
     .catch(() => {});
 

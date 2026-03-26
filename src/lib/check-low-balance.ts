@@ -5,6 +5,7 @@
  */
 
 import { db } from "@/lib/db";
+import { sendPushForNotification } from "@/lib/push-notifications";
 
 const COOLDOWN_HOURS = 24;
 
@@ -45,14 +46,18 @@ export async function checkLowBalance(accountId: string): Promise<boolean> {
   }
 
   // Create low balance notification
+  const title = `Low balance: ${account.name}`;
+  const message = `Your ${account.name} account balance is ${account.currency} ${account.balance.toFixed(2)}, which is below your alert threshold of ${account.currency} ${account.lowBalanceThreshold.toFixed(2)}.`;
+  const priority = "high";
+
   await db.notification.create({
     data: {
       userId: account.userId,
       spaceId: account.spaceId,
       type: "low_balance",
-      title: `Low balance: ${account.name}`,
-      message: `Your ${account.name} account balance is ${account.currency} ${account.balance.toFixed(2)}, which is below your alert threshold of ${account.currency} ${account.lowBalanceThreshold.toFixed(2)}.`,
-      priority: "high",
+      title,
+      message,
+      priority,
       metadata: JSON.stringify({
         accountId: account.id,
         accountName: account.name,
@@ -62,6 +67,14 @@ export async function checkLowBalance(accountId: string): Promise<boolean> {
       }),
     },
   });
+
+  // Send push notification
+  sendPushForNotification(account.userId, {
+    type: "low_balance",
+    title,
+    message,
+    priority,
+  }).catch(() => {}); // fire-and-forget
 
   return true;
 }

@@ -5,6 +5,7 @@
  */
 
 import { db } from "@/lib/db";
+import { sendPushForNotification } from "@/lib/push-notifications";
 
 const COOLDOWN_HOURS = 24;
 
@@ -67,19 +68,30 @@ export async function checkExpenseReminder(userId: string): Promise<boolean> {
     ? `You haven't logged any transactions in ${daysSinceLastTransaction} days. Don't forget to track your expenses!`
     : `You haven't logged any transactions yet. Start tracking your expenses to get insights!`;
 
+  const title = "Time to log your expenses";
+  const priority = "low";
+
   await db.notification.create({
     data: {
       userId,
       type: "expense_reminder",
-      title: "Time to log your expenses",
+      title,
       message,
-      priority: "low",
+      priority,
       metadata: JSON.stringify({
         daysSinceLastTransaction,
         reminderDays: user.reminderDays,
       }),
     },
   });
+
+  // Send push notification
+  sendPushForNotification(userId, {
+    type: "expense_reminder",
+    title,
+    message,
+    priority,
+  }).catch(() => {}); // fire-and-forget
 
   return true;
 }

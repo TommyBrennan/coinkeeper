@@ -29,6 +29,7 @@ model User {
   telegramLinkCodes TelegramLinkCode[]
   products         Product[]
   notifications    Notification[]
+  pushSubscriptions PushSubscription[]
 }
 
 // ─── WebAuthn Credentials ────────────────────────────────────────────
@@ -308,6 +309,21 @@ model Notification {
   @@index([userId, read])
   @@index([userId, createdAt])
   @@index([spaceId])
+}
+
+// ─── Push Subscriptions ─────────────────────────────────────────────
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String   // public key
+  auth      String   // auth secret
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 // ─── Shared Spaces ───────────────────────────────────────────────────
