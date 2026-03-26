@@ -334,6 +334,148 @@ function registerHandlers(bot: Bot) {
     }
   });
 
+  // /balance command — show account balances
+  bot.command("balance", async (ctx) => {
+    const linked = await requireLinkedUser(ctx);
+    if (!linked) return;
+
+    const accounts = await db.account.findMany({
+      where: { userId: linked.userId, isArchived: false, spaceId: null },
+      orderBy: { createdAt: "asc" },
+    });
+
+    if (accounts.length === 0) {
+      await ctx.reply(
+        "You don't have any accounts yet.\n" +
+        "Create one in the CoinKeeper web app first!"
+      );
+      return;
+    }
+
+    // Build account list
+    const lines: string[] = ["\u{1F4B3} Your Accounts\n"];
+    const totals: Record<string, number> = {};
+
+    for (const account of accounts) {
+      const icon = account.type === "cash" ? "\u{1F4B5}" :
+                   account.type === "bank" ? "\u{1F3E6}" :
+                   account.type === "credit" ? "\u{1F4B3}" :
+                   account.type === "wallet" ? "\u{1F45B}" : "\u{1F4B0}";
+      const balanceStr = account.balance.toFixed(2);
+      lines.push(`${icon} ${account.name}: ${balanceStr} ${account.currency}`);
+
+      const cur = account.currency.toUpperCase();
+      totals[cur] = (totals[cur] || 0) + account.balance;
+    }
+
+    // Net worth summary
+    lines.push("");
+    lines.push("\u{1F4CA} Net Worth:");
+    for (const [currency, total] of Object.entries(totals)) {
+      lines.push(`  ${total.toFixed(2)} ${currency}`);
+    }
+
+    await ctx.reply(lines.join("\n"));
+  });
+
+  // /spending command — show spending summary by category
+  bot.command("spending", async (ctx) => {
+    const linked = await requireLinkedUser(ctx);
+    if (!linked) return;
+
+    // Parse period argument
+    const arg = (ctx.match?.trim() || "").toLowerCase();
+    const now = new Date();
+    let fromDate: Date;
+    let periodLabel: string;
+
+    if (arg === "week") {
+      fromDate = new Date(now);
+      fromDate.setDate(fromDate.getDate() - 7);
+      periodLabel = "last 7 days";
+    } else if (arg === "year") {
+      fromDate = new Date(now.getFullYear(), 0, 1);
+      periodLabel = `${now.getFullYear()}`;
+    } else {
+      // Default: current month
+      fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      const monthName = now.toLocaleString("en-US", { month: "long" });
+      periodLabel = `${monthName} ${now.getFullYear()}`;
+    }
+
+    // Get user's personal account IDs
+    const accounts = await db.account.findMany({
+      where: { userId: linked.userId, isArchived: false, spaceId: null },
+      select: { id: true },
+    });
+
+    if (accounts.length === 0) {
+      await ctx.reply("You don't have any accounts yet.");
+      return;
+    }
+
+    const accountIds = accounts.map((a) => a.id);
+
+    // Fetch expense transactions for the period
+    const transactions = await db.transaction.findMany({
+      where: {
+        type: "expense",
+        fromAccountId: { in: accountIds },
+        date: { gte: fromDate, lte: now },
+      },
+      select: {
+        amount: true,
+        currency: true,
+        category: { select: { name: true } },
+      },
+    });
+
+    if (transactions.length === 0) {
+      await ctx.reply(`No expenses found for ${periodLabel}.`);
+      return;
+    }
+
+    // Group by category
+    const categoryTotals: Record<string, number> = {};
+    let grandTotal = 0;
+    let primaryCurrency = "USD";
+    const currencyCount: Record<string, number> = {};
+
+    for (const txn of transactions) {
+      const catName = txn.category?.name ?? "Uncategorized";
+      categoryTotals[catName] = (categoryTotals[catName] || 0) + txn.amount;
+      grandTotal += txn.amount;
+
+      const cur = txn.currency.toUpperCase();
+      currencyCount[cur] = (currencyCount[cur] || 0) + 1;
+    }
+
+    // Determine primary currency
+    let maxCount = 0;
+    for (const [cur, count] of Object.entries(currencyCount)) {
+      if (count > maxCount) {
+        maxCount = count;
+        primaryCurrency = cur;
+      }
+    }
+
+    // Sort categories by total descending
+    const sorted = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1]);
+
+    const lines: string[] = [`\u{1F4CA} Spending — ${periodLabel}\n`];
+
+    for (const [catName, total] of sorted) {
+      const pct = ((total / grandTotal) * 100).toFixed(0);
+      lines.push(`\u{1F3F7}\uFE0F ${catName}: ${total.toFixed(2)} ${primaryCurrency} (${pct}%)`);
+    }
+
+    lines.push("");
+    lines.push(`\u{1F4B8} Total: ${grandTotal.toFixed(2)} ${primaryCurrency}`);
+    lines.push(`\u{1F4DD} ${transactions.length} transaction${transactions.length !== 1 ? "s" : ""}`);
+
+    await ctx.reply(lines.join("\n"));
+  });
+
   // /help command
   bot.command("help", async (ctx) => {
     const linked = await requireLinkedUser(ctx);
@@ -343,6 +485,8 @@ function registerHandlers(bot: Bot) {
       "\u{1F4CB} Available commands:\n\n" +
       "/balance \u2014 View account balances\n" +
       "/spending \u2014 Monthly spending summary\n" +
+      "/spending week \u2014 Last 7 days\n" +
+      "/spending year \u2014 Year-to-date\n" +
       "/cancel \u2014 Cancel pending expense entry\n" +
       "/help \u2014 Show this help message\n" +
       "/unlink \u2014 Unlink your Telegram account\n\n" +
