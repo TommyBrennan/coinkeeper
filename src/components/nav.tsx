@@ -76,6 +76,12 @@ export async function Nav() {
           >
             Categories
           </Link>
+          <Link
+            href="/spaces"
+            className="px-3 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          >
+            Spaces
+          </Link>
           <div className="ml-2 flex items-center gap-1 border-l border-gray-200 dark:border-gray-700 pl-2">
             <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">
               {session.user.name}
