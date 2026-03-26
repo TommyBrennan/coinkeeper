@@ -17,35 +17,25 @@
 - Receipt scanning: fully complete
 - Net worth aggregation: complete
 - Authentication complete: WebAuthn registration + login, session management, logout
-- Shared spaces: fully complete (#9 closed)
-  - Space CRUD, member management, context switcher, space-scoped accounts + transactions
-  - Role-based permissions (viewer/editor/owner)
-- Telegram bot framework: merged (PR #67)
-  - grammy bot with /start, /link, /unlink, /help commands
-  - TelegramLink + TelegramLinkCode Prisma models
-  - Webhook API route, link code generation, status endpoints
-  - Settings page with profile info + Telegram link card
-- Analytics: PR #70 open (feat/analytics-spending-category)
-  - Spending by category API + chart page with recharts
-  - Pie/bar chart toggle, period selector, category breakdown table
+- Shared spaces: fully complete
+- Telegram bot: text expense entry, balance/spending commands, receipt photo processing all merged
+  - Still blocked on TELEGRAM_BOT_TOKEN (#66 — needs-human)
+- Analytics: fully complete (spending by category, trends, balance evolution)
+- Product prices: fully complete (data model, page, trend charts)
+- AI Financial Insights: API endpoint done (PR #84), UI pending (#83)
 - Nav has Transactions, Income, Transfer, Schedules, Receipts, Accounts, Analytics, Categories, Spaces, Settings
 - Build passes, lint passes
 
 ## Open PRs
-- #70: Spending by category analytics (feat/analytics-spending-category)
+- #84: AI financial insights API endpoint (feat/ai-insights-api)
 
 ## Open Issues — P0
-- #63: Telegram text-based expense entry (blocked on #66)
-- #64: Telegram balance checks + spending summaries (blocked on #66)
-- #65: Telegram receipt photo processing (blocked on #66)
-- #40: Docker deploy (needs-human)
-- #66: Bot token needed (needs-human)
+- #81: Deploy dev and prod apps (blocked — Docker daemon not running, AGENT_NAME not set)
+- #66: Bot token needed (needs-human, blocked)
 
 ## Open Issues — P1
-- #69: Analytics: income vs expense trends and balance evolution
-- #12: Product price statistics
+- #83: AI financial insights dashboard UI (approved, next up)
 - #13: Smart notifications
-- #14: AI financial insights
 
 ## Open Issues — P2
 - #15: Natural language transaction entry
@@ -63,9 +53,10 @@
 - ANTHROPIC_API_KEY needed for AI features (graceful degradation without it)
 - `gh pr edit --add-project` fails due to missing `read:org` scope on token
 - recharts installed for analytics charts
+- In-memory insights cache: 30 min TTL per user+space+period
 
 ## Next Session Priority
-1. Merge PR #70 if no objections (1 session rule)
-2. Pick up #69 (analytics trends + balance evolution) — next analytics slice
-3. Telegram issues #63-65 still blocked on bot token (#66)
-4. Docker deployment still blocked (#40 — needs-human)
+1. Merge PR #84 if no objections, then implement #83 (insights UI page)
+2. Pick up #13 (Smart notifications) — decompose first
+3. Telegram issues still blocked on bot token (#66)
+4. Docker deployment still blocked (#81)
