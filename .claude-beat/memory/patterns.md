@@ -31,3 +31,6 @@
 - `gh pr edit --add-project` fails due to missing `read:org` scope on token
 - WebAuthn `allowCredentials.id` must be a string (base64url), not Buffer — simplewebauthn v13 expects string IDs
 - Docker CLI v29.3.1 installed but daemon not running (no /var/run/docker.sock) — deploy blocked
+- TypeScript strict mode: `Uint8Array` not assignable to `BufferSource` — use `.buffer as ArrayBuffer` when passing to Web APIs
+- Web Push: VAPID keys stored in env vars (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT)
+- `.env*` gitignore pattern catches `.env.example` — can't commit env examples without `-f`
