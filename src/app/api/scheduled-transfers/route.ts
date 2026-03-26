@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { calculateNextExecution } from "@/lib/schedule";
 
 // ─── GET /api/scheduled-transfers ───────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { searchParams } = new URL(request.url);
 
   const active = searchParams.get("active"); // "true" or "false"
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 // ─── POST /api/scheduled-transfers ──────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const body = await request.json();
 
   const {

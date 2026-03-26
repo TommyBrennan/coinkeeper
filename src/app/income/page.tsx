@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
 import Link from "next/link";
 import { IncomeCard } from "@/components/income-card";
@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function IncomePage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const incomeTransactions = await db.transaction.findMany({
     where: { userId: user.id, type: "income" },

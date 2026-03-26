@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { categorizeTransaction } from "@/lib/categorize";
 import { findSimilar, normalizeName } from "@/lib/category-normalize";
 
 // POST /api/categorize — AI-powered category suggestion
 export async function POST(request: NextRequest) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const body = await request.json();
 
   const { description, amount } = body;

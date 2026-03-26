@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { CategoryManager } from "@/components/category-manager";
 
 export default async function CategoriesPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const categories = await db.category.findMany({
     where: { userId: user.id },

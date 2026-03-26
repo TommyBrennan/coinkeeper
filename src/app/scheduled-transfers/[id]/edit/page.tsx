@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { ScheduledTransferForm } from "@/components/scheduled-transfer-form";
 
@@ -12,7 +12,7 @@ export default async function EditScheduledTransferPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await params;
 
   const schedule = await db.scheduledTransfer.findUnique({

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { AccountForm } from "@/components/account-form";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -13,7 +13,7 @@ export default async function EditAccountPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await params;
 
   const account = await db.account.findFirst({

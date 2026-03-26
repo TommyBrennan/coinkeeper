@@ -23,4 +23,9 @@
 - ARM64 Linux — no Chrome for Testing, no sudo access for apt install
 - Browser testing via agent-browser not available (no Chromium installed)
 - Next.js 16 route handlers: `params` is a Promise, must `await params` in dynamic routes
-- Temp auth: `getCurrentUser()` in `src/lib/auth.ts` creates/returns a seed user
+- Auth: WebAuthn passkeys via @simplewebauthn v13, httpOnly cookie sessions
+- `requireUser()` uses Next.js `redirect()` — works in server components and route handlers
+- `getCurrentUser()` returns null if no session; `requireUser()` redirects to /auth/register
+- Middleware at `src/middleware.ts` checks `ck_session` cookie, redirects if missing
+- WebAuthn RP config via env vars: WEBAUTHN_RP_ID, WEBAUTHN_ORIGIN (defaults to localhost:3000)
+- `gh pr edit --add-project` fails due to missing `read:org` scope on token

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { TransactionCard } from "@/components/transaction-card";
 import Link from "next/link";
 
@@ -30,7 +30,7 @@ function formatDateHeading(dateStr: string): string {
 }
 
 export default async function TransactionsPage() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   const transactions = await db.transaction.findMany({
     where: { userId: user.id },

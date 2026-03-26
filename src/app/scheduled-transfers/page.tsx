@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import Link from "next/link";
 import { ScheduledTransferCard } from "@/components/scheduled-transfer-card";
 
@@ -12,7 +12,7 @@ export default async function ScheduledTransfersPage({
 }: {
   searchParams: Promise<{ filter?: string }>;
 }) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const params = await searchParams;
   const filter = params.filter; // "active", "paused", or undefined (all)
 

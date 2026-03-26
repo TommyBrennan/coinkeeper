@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 // GET /api/accounts/[id] — get a single account
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await params;
 
   const account = await db.account.findFirst({
@@ -26,7 +26,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await params;
 
   const existing = await db.account.findFirst({
@@ -69,7 +69,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await params;
 
   const existing = await db.account.findFirst({

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { calculateNextExecution } from "@/lib/schedule";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -8,7 +8,7 @@ type RouteContext = { params: Promise<{ id: string }> };
 // ─── GET /api/scheduled-transfers/[id] ──────────────────────────────
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await context.params;
 
   const schedule = await db.scheduledTransfer.findFirst({
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // ─── PATCH /api/scheduled-transfers/[id] ────────────────────────────
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await context.params;
   const body = await request.json();
 
@@ -169,7 +169,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 // ─── DELETE /api/scheduled-transfers/[id] ───────────────────────────
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await context.params;
 
   const existing = await db.scheduledTransfer.findFirst({

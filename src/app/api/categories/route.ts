@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 const DEFAULT_CATEGORIES = [
   // Expense categories
@@ -26,7 +26,7 @@ const DEFAULT_CATEGORIES = [
 
 // GET /api/categories — list categories, seeding defaults if empty
 export async function GET() {
-  const user = await getCurrentUser();
+  const user = await requireUser();
 
   let categories = await db.category.findMany({
     where: { userId: user.id },

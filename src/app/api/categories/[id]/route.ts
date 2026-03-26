@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { normalizeName } from "@/lib/category-normalize";
 
 // PATCH /api/categories/[id] — rename a category
@@ -8,7 +8,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await params;
   const body = await request.json();
 
@@ -63,7 +63,7 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser();
+  const user = await requireUser();
   const { id } = await params;
 
   // Verify category belongs to user
