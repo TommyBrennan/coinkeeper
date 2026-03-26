@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, type, currency, balance, icon, color } = body;
+  const { name, type, currency, balance, icon, color, lowBalanceThreshold } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json(
@@ -77,6 +77,10 @@ export async function POST(request: NextRequest) {
       balance: typeof balance === "number" ? balance : 0,
       icon: icon || null,
       color: color || null,
+      lowBalanceThreshold:
+        lowBalanceThreshold !== undefined && lowBalanceThreshold !== null
+          ? parseFloat(lowBalanceThreshold)
+          : null,
     },
   });
 

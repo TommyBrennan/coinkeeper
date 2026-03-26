@@ -53,6 +53,7 @@ export default async function EditAccountPage({
           balance: account.balance,
           icon: account.icon,
           color: account.color,
+          lowBalanceThreshold: account.lowBalanceThreshold,
         }}
       />
     </main>
