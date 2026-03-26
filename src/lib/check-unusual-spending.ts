@@ -6,6 +6,7 @@
  */
 
 import { db } from "@/lib/db";
+import { sendPushForNotification } from "@/lib/push-notifications";
 
 const COOLDOWN_HOURS = 24;
 const HISTORY_DAYS = 90;
@@ -103,6 +104,7 @@ export async function checkUnusualSpending(
 
       // Create notification
       const { title, message } = formatAnomalyNotification(anomaly);
+      const priority = anomaly.multiplier >= 4 ? "high" : "medium";
 
       await db.notification.create({
         data: {
@@ -111,7 +113,7 @@ export async function checkUnusualSpending(
           type: "unusual_spending",
           title,
           message,
-          priority: anomaly.multiplier >= 4 ? "high" : "medium",
+          priority,
           metadata: JSON.stringify({
             anomalyType: anomaly.type,
             cooldownKey,
@@ -125,6 +127,14 @@ export async function checkUnusualSpending(
           }),
         },
       });
+
+      // Send push notification
+      sendPushForNotification(userId, {
+        type: "unusual_spending",
+        title,
+        message,
+        priority,
+      }).catch(() => {}); // fire-and-forget
 
       return true; // Created at least one notification
     }
