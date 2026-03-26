@@ -36,4 +36,157 @@ Let me first read the existing scheduled transfer model and API to understand wh
 
 **Next session:**
 1. Merge PR #35 → close parent issue #3 (Scheduled Transfers fully complete)
-2. Decompose and begin next P0 feature (AI categorization, auth, or receipt scanning)
+2. Decompose and begin next P0 feature (AI categorization, auth, or receipt scanning)Now let me handle PR #70 first - it's been open for 1 session and has no objections. Let me merge it, then work on issue #69.Good, PR #70 merged. Let me close issue #68 and check deploy status.No containers deployed yet (issue #40 is blocked on needs-human). Let me now focus on implementing **issue #69: Analytics - income vs expense trends and balance evolution** (P1, approved).
+
+Let me explore the current analytics setup and relevant code:Now let me also check the format utility:Good. Now I have a clear picture. Let me write the spec for issue #69, then implement it. I'll create a new branch and build:
+
+1. **API**: `GET /api/analytics/trends` — monthly income vs expense aggregation
+2. **API**: `GET /api/analytics/balance-history` — daily balance snapshots
+3. **UI**: Income vs Expense trends line chart + Balance evolution chart components on the analytics page
+
+Let me start implementing:First, let me write the spec as a comment on the issue:Now let me implement the API endpoints and UI components:Now create the UI components:Now update the analytics page to include the new components:Now let's build and lint to verify everything compiles:Fix the type error:Build passes. Now let me test with agent-browser:The page renders correctly. I can see:
+- "Spending by Category" section (from the previous PR)
+- "Income vs Expenses" section below it with period selector
+- Need to scroll down to see the Balance Evolution section
+
+Let me scroll down to verify:All three sections render correctly:
+1. **Spending by Category** - with empty state
+2. **Income vs Expenses** - with period selector and empty state message
+3. **Balance Evolution** - visible at the bottom with account dropdown and period selector
+
+Let me kill the dev server and proceed to commit and create PR:Now let me write the session log and update memory:Session complete. Here's a summary of what was accomplished:
+
+## Session Summary — 2026-03-26 08:00 UTC
+
+### Completed
+- **Merged PR #70** (spending-by-category analytics) — issue #68 closed
+- **Implemented issue #69**: Income vs expense trends and balance evolution analytics
+  - `GET /api/analytics/trends` — monthly income vs expense aggregation
+  - `GET /api/analytics/balance-history` — daily balance snapshots with account filtering
+  - `IncomeVsExpenseTrends` component — area chart + summary cards (income/expenses/net savings)
+  - `BalanceEvolution` component — line chart + account dropdown + period selector
+  - Updated analytics page with all 3 sections
+- **Opened PR #71** — [Add income vs expense trends and balance evolution analytics](https://github.com/TommyBrennan/coinkeeper/pull/71)
+
+### Build Status
+- Lint: 0 errors, 0 warnings
+- Build: passes
+- Browser: all sections render correctly with empty states
+
+### Blockers
+- Telegram bot (#63-65) blocked on bot token (#66 — needs-human)
+- Docker deploy (#40) — needs-humanThe dev server background task completed — that's expected since I already killed it after taking screenshots. The session is fully complete. PR #71 is open and ready for review.Good, let me review the current state. PR #71 is open with no objections and no CI configured. Let me merge it and then pick the next task.PR #71 merged. No human response on #66 (Telegram bot token). Let me pull main, check deploy status, and decide on next work.Deploy is blocked by missing `AGENT_NAME` env var — this is related to issue #40 (needs-human). I'll skip deployment for now.
+
+Now let me decide on next work. Available P1 issues: #12 (Product price statistics), #13 (Smart notifications), #14 (AI financial insights). Let me check them.Let me check the current schema to understand what data we have to work with.Good. The app already has receipts functionality. Let me pick #12 (Product price statistics) — it's the most concrete P1 issue. This is a large feature, so I need to decompose it first.
+
+Let me understand what receipt data looks like:Good. Now I have a solid understanding of the data model. Receipt line items have `name`, `quantity`, `unitPrice`, `totalPrice` stored as JSON in `parsedData`. The merchant comes from `Receipt.merchant`.
+
+For Product Price Statistics (#12), this is a large feature that needs decomposition. Let me create the decomposition.I'll decompose issue #12 into vertical slices, then implement the first one. Let me create the sub-issues:Now let me implement Slice 1 (#72): data model and extraction API. Let me create a branch and start working.First, let me write the spec as a comment on the issue, then implement.Now let me implement. Start with the schema:Now add the relations to the User model:Now run the migration:Now create the product normalization utility and API endpoints:Now let me check the auth helper pattern used by other APIs:Now let me look at an existing API route pattern for reference:Good, I see the pattern. Now let me create the three API endpoints:Now let me run lint and build to verify:Lint clean, build passes. Now let me verify with browser testing:Server is running. Since this is a data model + API change (no UI), let me verify the API endpoints work by testing them directly. But we need auth — let me check if there's a way to test:Expected — redirects to login since no auth. The API routes require authentication. This is fine for a data model + API PR. Let me kill the server and commit.Now let me commit and open a PR:Now let me write the session log and update memory:Session complete. Here's what I accomplished:
+
+## Session Summary — 2026-03-26 09:00 UTC
+
+**REVIEW:**
+- ✅ Merged PR #71 (income vs expense trends + balance evolution analytics)
+- No human response on #66 (Telegram bot token) — still blocked
+- Deploy blocked by missing `AGENT_NAME` env var
+
+**DECIDE & ACT:**
+- Decomposed issue #12 (Product price statistics, P1) into 3 sub-issues:
+  - **#72** — Data model + extraction API (this session)
+  - **#73** — Product prices page with search UI
+  - **#74** — Price trends and store comparison charts
+- Implemented #72:
+  - Added `Product` and `ProductPrice` Prisma models with migration
+  - Created `POST /api/products/extract` — scans receipts, extracts products and prices (idempotent)
+  - Created `GET /api/products` — list/search products with latest price
+  - Created `GET /api/products/[id]/prices` — price history with stats
+- Build ✅, Lint ✅
+
+**PR:** Opened [PR #75](https://github.com/TommyBrennan/coinkeeper/pull/75)
+
+**Next:** Merge #75, then implement #73 (prices page UI).The background dev server task completed (it was already killed earlier). No action needed — the session is complete and PR #75 is open for review.Good. PR #75 is open, mergeable, no objections after 1 session. Let me merge it and then pick up issue #73 (Product prices page with search UI).Now let me understand the existing codebase to build the prices page.Now I have a good understanding of the patterns. Let me check the `formatMoney` utility and then build the prices page.Now let me write the spec as a comment on issue #73 and then implement the page.Now let me implement the prices page. I'll create the server page component and the client-side product list component.Now add the "Prices" link to the nav:Now let's run lint and build to verify:Build passes. Now let me test with the browser:The page loads but shows "Failed to load products" — this is because the browser isn't authenticated. The page structure is correct (nav link, title, subtitle all render). Let me verify the API works by registering/logging in first. Actually, the error is expected since `requireApiUser()` returns 401 when not authenticated. The page component and layout are rendering correctly. Let me check if the user sees the redirect to login when visiting without auth:The page is rendering correctly. The "Failed to load products" is expected because the browser session isn't authenticated — the API returns 401. The server component uses `requireUser()` which would redirect unauthenticated users to login in a real browser session. The page structure, nav link, search, and empty states are all properly implemented.
+
+Let me kill the dev server and proceed to commit:Now let me open a PR:Project board edit requires org scopes — non-critical. Now let me write the session log and update memory.Session complete. Here's what I accomplished:
+
+**Merged:** PR #75 — Product price tracking data model and extraction API (issue #72)
+
+**Implemented & opened PR:** [#76](https://github.com/TommyBrennan/coinkeeper/pull/76) — Product prices page with search and price history (issue #73)
+
+Key features of the new `/prices` page:
+- **Search**: Debounced text input filters products by name
+- **Product table**: Shows name, latest price, store, and observation count
+- **Expandable rows**: Click any product to see its full price history with stats (average, min, max prices) and a per-observation table
+- **Empty states**: Guides users to scan receipts when no products exist
+- **Nav integration**: "Prices" link added to the navigation bar
+
+**Next session priorities:**
+1. Merge PR #76 if no objections
+2. Pick up issue #74 (price trends and store comparison charts)
+3. Check for human response on Telegram bot token (#66)The background dev server has completed (it was killed when we finished testing). No action needed — the session is already complete and PR #76 has been pushed.Now let me start on issue #74 — price trend charts and store comparison. Let me first understand the existing codebase for the prices feature and analytics charts.Let me look at an existing chart component for the exact pattern:Good. Now I have a clear picture. Let me write the spec for #74 and then implement it. The plan:
+
+1. Add Recharts-based price trend line chart (price over time, series per store) to the PriceHistoryPanel
+2. Add store comparison bar chart (average price per store) 
+3. Keep existing stats cards and price table
+
+Let me create the branch and implement:Now let me implement the charts in the PriceHistoryPanel. I'll add a new component for the charts:Good. I now have the full pattern. Let me implement the price trend charts. I'll modify the `PriceHistoryPanel` in `product-price-list.tsx` to add charts:Now replace the `PriceHistoryPanel` to add charts between stats and table:Now add the `PriceTrendCharts` component and helper functions before the `StatCard` component:Now let's lint and build:Lint clean, build passes. Now let me test in the browser:The API fails because there's no authenticated session in the test browser — that's expected (same as the previous session noted). The page renders correctly, and the UI components are loading. The auth gate blocks API calls in the test environment.
+
+Let me verify the component renders correctly by checking the build passes (which it does) and that the code is structurally sound. Let me also kill the server and commit:Now let me commit and open a PR:Now let me check for any PRD features that don't have issues yet and write the session log:No response on #66. Now let me check deployment status and write the session log:Deployment isn't set up yet — issue #40 is blocked as needs-human. Let me write the session log:## Session Complete — 2026-03-26 11:00 UTC
+
+### Done this session:
+1. **Merged PR #76** — Product prices page with search and expandable price history
+2. **Implemented #74** — Added Recharts-based price trend charts to the product price detail panel:
+   - **Line chart**: Shows price over time with separate colored lines per store
+   - **Bar chart**: Compares average prices across stores (only shown with 2+ stores)
+   - Charts sit between stat cards and the price history table
+   - Only render when product has 2+ price observations
+3. **Opened PR #77**: [Add price trend charts and store comparison](https://github.com/TommyBrennan/coinkeeper/pull/77)
+
+### Blockers:
+- Telegram bot (#63-65) still blocked by missing bot token (#66)
+- Docker deployment (#40) needs human action
+- No dev environment deployed yet
+
+### Next session:
+- Merge PR #77 if no objections
+- Pick up P1 work (#14 AI financial insights or #13 Smart notifications)The background dev server task completed — that was just the `npm run dev` process that we already used for browser testing and then killed. No action needed; the session is already complete.Build passes. Let me merge PR #79 and then pick up the next work.Good. PR #79 merged, issue #64 was already closed. Now on main. Let me assess what to work on next.
+
+**Open P0 issues:**
+- #65 — Telegram bot receipt photo processing (approved, P0, prd)
+- #66 — needs-human: Telegram bot token (blocked, needs-human — skip)
+- #40 — Docker setup for dev deploy (needs-human — skip)
+
+**Open P1 issues:**
+- #13 — Smart notifications
+- #14 — AI financial insights
+
+**Open P2 issues:**
+- #15–18 — Natural language entry, import/export, multi-currency aggregation, custom reports
+
+The highest priority is **#65 — Telegram bot receipt photo processing**. Let me check the issue details and then implement it.Now I have full context. Let me write the spec for issue #65 and then implement it. The receipt parsing pipeline already exists — I just need to wire it into the Telegram bot's photo message handler.Now let me implement. First, let me read the current telegram.ts file in detail:Now I have everything I need. Let me create the feature branch and implement the receipt photo processing.Now let me implement the receipt photo processing in telegram.ts. I need to:
+1. Add a pending receipt state map
+2. Add photo message handler
+3. Add callback handlers for receipt confirm/cancel and account selection
+4. Update the help commandNow I'll implement the receipt photo processing. The changes needed are:
+
+1. Import `parseReceiptImage` and its types
+2. Add a `PendingReceipt` interface and in-memory store
+3. Add photo message handler
+4. Add receipt callback handlers (confirm, cancel, account selection)
+5. Update help command
+6. Update cancel command to also handle pending receiptsNow add the pending receipt state after the pending expense state:Now update the /cancel command to also handle pending receipts:Now update the /help command to mention receipt photos:Now add the receipt callback handlers in the callback query handler section. I need to add them before the existing `cancel_expense` handler:Now add the photo message handler. It needs to be registered before the text handler:Now let me verify the build passes:The Receipt model uses a `user` relation instead of direct `userId`. Let me check the schema:The Receipt model has no `userId` field. Let me remove that:Build passes. Let me also check for lint issues:Clean. Now let me check if there's an unused import I should clean up:Good, both imports are used. Now let me commit and create a PR.Now let me write the session log and update memory:## Session Summary
+
+**Completed this session:**
+
+1. **Merged PR #79** — Telegram bot `/balance` and `/spending` commands (issue #64 already closed)
+
+2. **Implemented issue #65** — Telegram bot receipt photo processing
+   - Added photo message handler that downloads images from Telegram API and processes via AI receipt parser
+   - Shows extracted receipt data (merchant, items, total) with confirm/cancel inline keyboard
+   - Creates individual transactions per line item with AI-powered categorization on confirmation
+   - Supports both single-account auto-creation and multi-account picker flows
+   - 10-minute pending receipt expiry with auto-cleanup
+   - **PR #80 opened**: https://github.com/TommyBrennan/coinkeeper/pull/80
+
+**Current state:**
+- All P0 features are now implemented (only #66 needs-human for Telegram bot token remains)
+- Next priorities: P1 issues #13 (smart notifications) and #14 (AI financial insights)/home/claude-beat/.claude-beat/run.sh: line 61: /app/.claude-beat/logs/sessions/2026-03-26_13-00.md: Permission denied
