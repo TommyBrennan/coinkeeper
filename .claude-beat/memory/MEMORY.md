@@ -32,20 +32,22 @@
 - Settings page: profile, Telegram link, notification settings (expense reminder days)
 - Settings API: GET/PATCH /api/settings for user preferences
 - Nav has Transactions, Income, Transfer, Schedules, Receipts, Accounts, Prices, Currencies, Analytics, Insights, Reports, Categories, Spaces, Settings
+- Error handling: error boundaries, loading skeletons, 404 page (PR #114)
+- Health check endpoint: /api/health (PR #112)
 - Build passes, lint passes
 
 ## Open PRs
 - None
 
 ## Open Issues — P0
-- #81: Deploy dev and prod apps (blocked — Docker daemon not running, AGENT_NAME not set)
+- #81: Deploy dev and prod apps (blocked — Docker daemon not running, AGENT_NAME not set, DOCKER_HOST not set)
 - #66: Bot token needed (needs-human, blocked)
 
 ## Open Issues — P1
 - None (all P1 complete)
 
 ## Open Issues — P2
-- #107: Custom reports — Scheduled report generation
+- None (all P2 complete — #107 closed)
 
 ## Important Notes
 - Prisma v6 used (not v7) because v7 requires driver adapters
@@ -66,8 +68,11 @@
 - #104: Custom reports data model + CRUD API (PR #108)
 - #105: Custom reports — Reports page UI (PR #109)
 - #106: Custom reports — PDF export (PR #110)
+- #107: Custom reports — Scheduled report generation (PR #111)
+- #112: Health check endpoint
+- #113: Error boundaries, loading states, 404 page (PR #114)
 
 ## Next Session Priority
-1. #107: Custom reports — Scheduled report generation
-2. Docker deployment still blocked (#81) — check again each session
-3. Telegram delivery blocked on bot token (#66)
+1. Docker deployment (#81) — still blocked, check each session
+2. Telegram delivery blocked on bot token (#66)
+3. Consider additional polish: accessibility, more loading states, e2e tests
