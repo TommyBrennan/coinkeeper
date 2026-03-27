@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
+import { calculateNextRunAt } from "@/lib/report-schedule";
 
 // GET /api/reports/[id] — get a single saved report
 export async function GET(
@@ -84,6 +85,36 @@ export async function PATCH(
       );
     }
     data.filters = JSON.stringify(body.filters);
+  }
+
+  // Handle schedule fields
+  if (body.scheduleEnabled !== undefined) {
+    data.scheduleEnabled = !!body.scheduleEnabled;
+    if (body.scheduleEnabled) {
+      if (body.scheduleFrequency !== undefined) data.scheduleFrequency = body.scheduleFrequency;
+      if (body.scheduleDay !== undefined) data.scheduleDay = body.scheduleDay;
+      if (body.scheduleTime !== undefined) data.scheduleTime = body.scheduleTime;
+      // Recalculate nextRunAt
+      const freq = body.scheduleFrequency ?? existing.scheduleFrequency ?? "daily";
+      const day = body.scheduleDay ?? existing.scheduleDay;
+      data.nextRunAt = calculateNextRunAt(freq, day);
+    } else {
+      // Disable: clear schedule fields
+      data.scheduleFrequency = null;
+      data.scheduleDay = null;
+      data.scheduleTime = null;
+      data.nextRunAt = null;
+    }
+  } else if (body.scheduleFrequency !== undefined || body.scheduleDay !== undefined) {
+    // Update schedule params without toggling enabled/disabled
+    if (body.scheduleFrequency !== undefined) data.scheduleFrequency = body.scheduleFrequency;
+    if (body.scheduleDay !== undefined) data.scheduleDay = body.scheduleDay;
+    if (body.scheduleTime !== undefined) data.scheduleTime = body.scheduleTime;
+    if (existing.scheduleEnabled) {
+      const freq = (body.scheduleFrequency ?? existing.scheduleFrequency) as string;
+      const day = body.scheduleDay ?? existing.scheduleDay;
+      data.nextRunAt = calculateNextRunAt(freq, day);
+    }
   }
 
   const updated = await db.savedReport.update({

@@ -32,6 +32,7 @@ model User {
   notifications    Notification[]
   pushSubscriptions PushSubscription[]
   savedReports     SavedReport[]
+  generatedReports GeneratedReport[]
 }
 
 // ─── WebAuthn Credentials ────────────────────────────────────────────
@@ -361,15 +362,44 @@ model SavedReport {
   userId      String
   name        String
   description String?
-  format      String   @default("csv") // csv, json
+  format      String   @default("csv") // csv, json, pdf
   filters     String   // JSON: { type?, accountId?, categoryId?, from?, to?, periodPreset? }
   lastRunAt   DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Scheduling
+  scheduleEnabled   Boolean  @default(false)
+  scheduleFrequency String?  // daily, weekly, monthly
+  scheduleDay       Int?     // day of week (0-6) for weekly, day of month (1-31) for monthly
+  scheduleTime      String?  // HH:MM display hint
+  nextRunAt         DateTime?
+  lastGeneratedAt   DateTime?
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  generatedReports GeneratedReport[]
 
   @@index([userId])
+  @@index([scheduleEnabled, nextRunAt])
+}
+
+model GeneratedReport {
+  id          String   @id @default(cuid())
+  reportId    String
+  userId      String
+  format      String   // csv, json, pdf
+  data        Bytes    // generated file content
+  summary     String?  // JSON summary stats
+  fileName    String?
+  generatedAt DateTime @default(now())
+  expiresAt   DateTime? // auto-cleanup after 30 days
+
+  report SavedReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // ─── Exchange Rate History ──────────────────────────────────────────
