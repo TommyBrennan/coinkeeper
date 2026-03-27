@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { getSpaceContext } from "@/lib/space-context";
+import { parseJsonBody } from "@/lib/api-utils";
 
 // GET /api/accounts — list accounts for the current context (personal or space)
 export async function GET() {
@@ -37,7 +38,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
   const { name, type, currency, balance, icon, color, lowBalanceThreshold } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {

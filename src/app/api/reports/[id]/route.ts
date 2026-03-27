@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { calculateNextRunAt } from "@/lib/report-schedule";
+import { parseJsonBody } from "@/lib/api-utils";
 
 // GET /api/reports/[id] — get a single saved report
 export async function GET(
@@ -49,7 +50,8 @@ export async function PATCH(
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
   const data: Record<string, unknown> = {};
 
   if (body.name !== undefined) {

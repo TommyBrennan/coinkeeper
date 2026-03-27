@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/api-utils";
 
 // GET /api/accounts/[id] — get a single account
 export async function GET(
@@ -37,7 +38,8 @@ export async function PATCH(
     return NextResponse.json({ error: "Account not found" }, { status: 404 });
   }
 
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
   const { name, type, currency, balance, icon, color, isArchived, lowBalanceThreshold } = body;
 
   const validTypes = ["cash", "bank", "wallet", "credit"];

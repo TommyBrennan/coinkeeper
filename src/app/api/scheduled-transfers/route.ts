@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { calculateNextExecution } from "@/lib/schedule";
+import { parseJsonBody } from "@/lib/api-utils";
 
 // ─── GET /api/scheduled-transfers ───────────────────────────────────
 
@@ -35,7 +36,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
 
   const {
     fromAccountId,
