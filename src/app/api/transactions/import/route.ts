@@ -170,7 +170,8 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const currency = (colMap.currency !== undefined ? fields[colMap.currency] : "") || "USD";
+      const rawCurrency = ((colMap.currency !== undefined ? fields[colMap.currency] : "") || "USD").trim().toUpperCase();
+      const currency = /^[A-Z]{3}$/.test(rawCurrency) ? rawCurrency : "USD";
       const description = colMap.description !== undefined ? fields[colMap.description] || "" : "";
 
       // Resolve account
