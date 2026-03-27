@@ -34,3 +34,6 @@
 - TypeScript strict mode: `Uint8Array` not assignable to `BufferSource` — use `.buffer as ArrayBuffer` when passing to Web APIs
 - Web Push: VAPID keys stored in env vars (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT)
 - `.env*` gitignore pattern catches `.env.example` — can't commit env examples without `-f`
+- Zod v4 (^4.3.6) installed — uses `.issues` not `.errors`, enum second arg is string message not `{errorMap}`, `z.record(z.string(), z.unknown())` not `z.record(z.unknown())`
+- Docker rootless: `unshare --map-root-user --mount` can start containerd+dockerd with `--bridge=none`, but image extraction fails due to single-UID mapping (no multi-UID support without setuid-root newuidmap)
+- Docker deploy requires AGENT_NAME env var + either host Docker socket or DOCKER_HOST env var
