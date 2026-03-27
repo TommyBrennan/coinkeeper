@@ -25,9 +25,12 @@ export async function GET(
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
+  let filters = {};
+  try { filters = JSON.parse(report.filters); } catch { /* invalid JSON, default to empty */ }
+
   return NextResponse.json({
     ...report,
-    filters: JSON.parse(report.filters),
+    filters,
   });
 }
 
@@ -106,9 +109,12 @@ export async function PATCH(
     data,
   });
 
+  let updatedFilters = {};
+  try { updatedFilters = JSON.parse(updated.filters); } catch { /* invalid JSON, default to empty */ }
+
   return NextResponse.json({
     ...updated,
-    filters: JSON.parse(updated.filters),
+    filters: updatedFilters,
   });
 }
 

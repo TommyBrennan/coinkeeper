@@ -23,7 +23,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const userData = JSON.parse(userDataStr);
+    let userData;
+    try {
+      userData = JSON.parse(userDataStr);
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid registration data. Please try again." },
+        { status: 400 }
+      );
+    }
     const { rpID, origin } = getWebAuthnConfig();
 
     const verification = await verifyRegistrationResponse({

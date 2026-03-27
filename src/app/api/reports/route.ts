@@ -23,12 +23,16 @@ export async function GET() {
   });
 
   return NextResponse.json(
-    reports.map((r) => ({
-      ...r,
-      filters: JSON.parse(r.filters),
-      generatedCount: r._count.generatedReports,
-      _count: undefined,
-    }))
+    reports.map((r) => {
+      let filters = {};
+      try { filters = JSON.parse(r.filters); } catch { /* invalid JSON, default to empty */ }
+      return {
+        ...r,
+        filters,
+        generatedCount: r._count.generatedReports,
+        _count: undefined,
+      };
+    })
   );
 }
 
@@ -67,7 +71,7 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json(
-    { ...report, filters: JSON.parse(report.filters) },
+    { ...report, filters: (() => { try { return JSON.parse(report.filters); } catch { return {}; } })() },
     { status: 201 }
   );
 }

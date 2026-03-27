@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
         publicKey: credential.publicKey,
         counter: Number(credential.counter),
         transports: credential.transports
-          ? JSON.parse(credential.transports)
+          ? (() => { try { return JSON.parse(credential.transports); } catch { return undefined; } })()
           : undefined,
       },
     });
