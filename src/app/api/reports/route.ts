@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
+import { calculateNextRunAt } from "@/lib/report-schedule";
 
 // GET /api/reports — list user's saved reports
 export async function GET() {
@@ -12,12 +13,19 @@ export async function GET() {
   const reports = await db.savedReport.findMany({
     where: { userId: user.id },
     orderBy: { updatedAt: "desc" },
+    include: {
+      _count: {
+        select: { generatedReports: true },
+      },
+    },
   });
 
   return NextResponse.json(
     reports.map((r) => ({
       ...r,
       filters: JSON.parse(r.filters),
+      generatedCount: r._count.generatedReports,
+      _count: undefined,
     }))
   );
 }
@@ -30,7 +38,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, description, format, filters } = body;
+  const { name, description, format, filters, scheduleEnabled, scheduleFrequency, scheduleDay, scheduleTime } = body;
 
   if (!name || typeof name !== "string" || name.trim().length === 0) {
     return NextResponse.json(
@@ -49,6 +57,12 @@ export async function POST(request: NextRequest) {
   const validFormats = ["csv", "json", "pdf"];
   const reportFormat = validFormats.includes(format) ? format : "csv";
 
+  // Calculate nextRunAt if schedule is enabled
+  let nextRunAt: Date | null = null;
+  if (scheduleEnabled && scheduleFrequency) {
+    nextRunAt = calculateNextRunAt(scheduleFrequency, scheduleDay ?? null);
+  }
+
   const report = await db.savedReport.create({
     data: {
       userId: user.id,
@@ -56,6 +70,11 @@ export async function POST(request: NextRequest) {
       description: description?.trim() || null,
       format: reportFormat,
       filters: JSON.stringify(filters),
+      scheduleEnabled: !!scheduleEnabled,
+      scheduleFrequency: scheduleEnabled ? scheduleFrequency || null : null,
+      scheduleDay: scheduleEnabled ? (scheduleDay ?? null) : null,
+      scheduleTime: scheduleEnabled ? (scheduleTime || null) : null,
+      nextRunAt,
     },
   });
 

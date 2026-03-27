@@ -31,6 +31,28 @@ interface SavedReport {
   lastRunAt: string | null;
   createdAt: string;
   updatedAt: string;
+  scheduleEnabled: boolean;
+  scheduleFrequency: string | null;
+  scheduleDay: number | null;
+  scheduleTime: string | null;
+  nextRunAt: string | null;
+  lastGeneratedAt: string | null;
+  generatedCount: number;
+}
+
+interface GeneratedReport {
+  id: string;
+  format: string;
+  fileName: string | null;
+  summary: {
+    totalTransactions: number;
+    totalExpenses: number;
+    totalIncome: number;
+    totalTransfers: number;
+    netAmount: number;
+  } | null;
+  generatedAt: string;
+  expiresAt: string | null;
 }
 
 interface JsonReportResult {
@@ -83,6 +105,14 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
   const [formAccountId, setFormAccountId] = useState("");
   const [formCategoryId, setFormCategoryId] = useState("");
   const [formPeriodPreset, setFormPeriodPreset] = useState("");
+  const [formScheduleEnabled, setFormScheduleEnabled] = useState(false);
+  const [formScheduleFrequency, setFormScheduleFrequency] = useState("weekly");
+  const [formScheduleDay, setFormScheduleDay] = useState<number | null>(1);
+
+  // Generated reports state
+  const [viewingGenerated, setViewingGenerated] = useState<string | null>(null);
+  const [generatedReports, setGeneratedReports] = useState<GeneratedReport[]>([]);
+  const [loadingGenerated, setLoadingGenerated] = useState(false);
 
   const fetchReports = useCallback(async () => {
     try {
@@ -110,6 +140,9 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
     setFormAccountId("");
     setFormCategoryId("");
     setFormPeriodPreset("");
+    setFormScheduleEnabled(false);
+    setFormScheduleFrequency("weekly");
+    setFormScheduleDay(1);
   }
 
   function populateForm(report: SavedReport) {
@@ -120,6 +153,9 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
     setFormAccountId(report.filters.accountId || "");
     setFormCategoryId(report.filters.categoryId || "");
     setFormPeriodPreset(report.filters.periodPreset || "");
+    setFormScheduleEnabled(report.scheduleEnabled);
+    setFormScheduleFrequency(report.scheduleFrequency || "weekly");
+    setFormScheduleDay(report.scheduleDay);
   }
 
   function buildFilters(): ReportFilters {
@@ -149,6 +185,9 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
           description: formDescription.trim() || undefined,
           format: formFormat,
           filters: buildFilters(),
+          scheduleEnabled: formScheduleEnabled,
+          scheduleFrequency: formScheduleEnabled ? formScheduleFrequency : undefined,
+          scheduleDay: formScheduleEnabled ? formScheduleDay : undefined,
         }),
       });
 
@@ -185,6 +224,9 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
           description: formDescription.trim() || null,
           format: formFormat,
           filters: buildFilters(),
+          scheduleEnabled: formScheduleEnabled,
+          scheduleFrequency: formScheduleEnabled ? formScheduleFrequency : undefined,
+          scheduleDay: formScheduleEnabled ? formScheduleDay : undefined,
         }),
       });
 
@@ -326,6 +368,68 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
     });
   }
 
+  function formatSchedule(report: SavedReport): string {
+    if (!report.scheduleEnabled || !report.scheduleFrequency) return "";
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    switch (report.scheduleFrequency) {
+      case "daily":
+        return "Daily";
+      case "weekly":
+        return report.scheduleDay !== null
+          ? `Weekly on ${dayNames[report.scheduleDay]}`
+          : "Weekly";
+      case "monthly": {
+        if (report.scheduleDay !== null) {
+          const s = ["th", "st", "nd", "rd"];
+          const v = report.scheduleDay % 100;
+          const suffix = s[(v - 20) % 10] || s[v] || s[0];
+          return `Monthly on the ${report.scheduleDay}${suffix}`;
+        }
+        return "Monthly";
+      }
+      default:
+        return report.scheduleFrequency;
+    }
+  }
+
+  async function loadGeneratedReports(reportId: string) {
+    if (viewingGenerated === reportId) {
+      setViewingGenerated(null);
+      return;
+    }
+    setViewingGenerated(reportId);
+    setLoadingGenerated(true);
+    try {
+      const res = await fetch(`/api/reports/${reportId}/generated`);
+      if (res.ok) {
+        const data = await res.json();
+        setGeneratedReports(data);
+      }
+    } catch {
+      console.error("Failed to load generated reports");
+    } finally {
+      setLoadingGenerated(false);
+    }
+  }
+
+  async function downloadGeneratedReport(reportId: string, genId: string, fileName: string | null, format: string) {
+    try {
+      const res = await fetch(`/api/reports/${reportId}/generated/${genId}`);
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName || `report.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      console.error("Failed to download generated report");
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -402,6 +506,9 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
             accountId={formAccountId}
             categoryId={formCategoryId}
             periodPreset={formPeriodPreset}
+            scheduleEnabled={formScheduleEnabled}
+            scheduleFrequency={formScheduleFrequency}
+            scheduleDay={formScheduleDay}
             accounts={accounts}
             categories={categories}
             onNameChange={setFormName}
@@ -411,6 +518,9 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
             onAccountIdChange={setFormAccountId}
             onCategoryIdChange={setFormCategoryId}
             onPeriodPresetChange={setFormPeriodPreset}
+            onScheduleEnabledChange={setFormScheduleEnabled}
+            onScheduleFrequencyChange={setFormScheduleFrequency}
+            onScheduleDayChange={setFormScheduleDay}
             onSubmit={handleCreate}
             onCancel={() => {
               setShowCreate(false);
@@ -436,6 +546,9 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
             accountId={formAccountId}
             categoryId={formCategoryId}
             periodPreset={formPeriodPreset}
+            scheduleEnabled={formScheduleEnabled}
+            scheduleFrequency={formScheduleFrequency}
+            scheduleDay={formScheduleDay}
             accounts={accounts}
             categories={categories}
             onNameChange={setFormName}
@@ -445,6 +558,9 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
             onAccountIdChange={setFormAccountId}
             onCategoryIdChange={setFormCategoryId}
             onPeriodPresetChange={setFormPeriodPreset}
+            onScheduleEnabledChange={setFormScheduleEnabled}
+            onScheduleFrequencyChange={setFormScheduleFrequency}
+            onScheduleDayChange={setFormScheduleDay}
             onSubmit={handleUpdate}
             onCancel={cancelEdit}
             submitLabel="Save Changes"
@@ -522,9 +638,32 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
                   <p className="text-xs text-gray-400 dark:text-gray-500">
                     {formatFilterSummary(report.filters)}
                   </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    Last run: {formatDate(report.lastRunAt)}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      Last run: {formatDate(report.lastRunAt)}
+                    </p>
+                    {report.scheduleEnabled && (
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                        {formatSchedule(report)}
+                        {report.nextRunAt && (
+                          <span className="text-gray-400 dark:text-gray-500">
+                            · Next: {formatDate(report.nextRunAt)}
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    {report.generatedCount > 0 && (
+                      <button
+                        onClick={() => loadGeneratedReports(report.id)}
+                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        {viewingGenerated === report.id ? "Hide" : "View"} history ({report.generatedCount})
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
@@ -601,6 +740,58 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
                   </button>
                 </div>
               </div>
+
+              {/* Generated reports history */}
+              {viewingGenerated === report.id && (
+                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+                  <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase tracking-wider">
+                    Generated Reports
+                  </h4>
+                  {loadingGenerated ? (
+                    <div className="flex items-center gap-2 py-2">
+                      <div className="w-3 h-3 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-xs text-gray-400">Loading...</span>
+                    </div>
+                  ) : generatedReports.length === 0 ? (
+                    <p className="text-xs text-gray-400 py-2">No generated reports yet.</p>
+                  ) : (
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {generatedReports.map((gen) => (
+                        <div
+                          key={gen.id}
+                          className="flex items-center justify-between gap-2 py-1.5 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 uppercase">
+                              {gen.format}
+                            </span>
+                            <span className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                              {gen.fileName || `report.${gen.format}`}
+                            </span>
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                              {formatDate(gen.generatedAt)}
+                            </span>
+                            {gen.summary && (
+                              <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                                ({gen.summary.totalTransactions} txns)
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => downloadGeneratedReport(report.id, gen.id, gen.fileName, gen.format)}
+                            className="shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                          >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                            Download
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -762,6 +953,8 @@ function SummaryCard({
   );
 }
 
+const DAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 function ReportForm({
   name,
   description,
@@ -770,6 +963,9 @@ function ReportForm({
   accountId,
   categoryId,
   periodPreset,
+  scheduleEnabled,
+  scheduleFrequency,
+  scheduleDay,
   accounts,
   categories,
   onNameChange,
@@ -779,6 +975,9 @@ function ReportForm({
   onAccountIdChange,
   onCategoryIdChange,
   onPeriodPresetChange,
+  onScheduleEnabledChange,
+  onScheduleFrequencyChange,
+  onScheduleDayChange,
   onSubmit,
   onCancel,
   submitLabel,
@@ -790,6 +989,9 @@ function ReportForm({
   accountId: string;
   categoryId: string;
   periodPreset: string;
+  scheduleEnabled: boolean;
+  scheduleFrequency: string;
+  scheduleDay: number | null;
   accounts: Account[];
   categories: Category[];
   onNameChange: (v: string) => void;
@@ -799,6 +1001,9 @@ function ReportForm({
   onAccountIdChange: (v: string) => void;
   onCategoryIdChange: (v: string) => void;
   onPeriodPresetChange: (v: string) => void;
+  onScheduleEnabledChange: (v: boolean) => void;
+  onScheduleFrequencyChange: (v: string) => void;
+  onScheduleDayChange: (v: number | null) => void;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
   submitLabel: string;
@@ -921,6 +1126,86 @@ function ReportForm({
             </select>
           </div>
         </div>
+      </div>
+
+      {/* Schedule section */}
+      <div>
+        <div className="flex items-center gap-3 mb-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={scheduleEnabled}
+              onChange={(e) => onScheduleEnabledChange(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Auto-generate on schedule
+            </span>
+          </label>
+        </div>
+
+        {scheduleEnabled && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pl-6">
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Frequency
+              </label>
+              <select
+                value={scheduleFrequency}
+                onChange={(e) => {
+                  onScheduleFrequencyChange(e.target.value);
+                  // Reset day when frequency changes
+                  if (e.target.value === "daily") onScheduleDayChange(null);
+                  else if (e.target.value === "weekly") onScheduleDayChange(1);
+                  else if (e.target.value === "monthly") onScheduleDayChange(1);
+                }}
+                className={inputClass}
+              >
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+
+            {scheduleFrequency === "weekly" && (
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  Day of week
+                </label>
+                <select
+                  value={scheduleDay ?? 1}
+                  onChange={(e) => onScheduleDayChange(parseInt(e.target.value))}
+                  className={inputClass}
+                >
+                  {DAY_NAMES.map((d, i) => (
+                    <option key={i} value={i}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {scheduleFrequency === "monthly" && (
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  Day of month
+                </label>
+                <select
+                  value={scheduleDay ?? 1}
+                  onChange={(e) => onScheduleDayChange(parseInt(e.target.value))}
+                  className={inputClass}
+                >
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2 pt-2">
