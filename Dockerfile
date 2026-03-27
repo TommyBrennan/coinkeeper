@@ -1,7 +1,7 @@
 FROM node:22-slim AS base
 
-# Install OpenSSL for Prisma
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# Install OpenSSL for Prisma and curl for health checks
+RUN apt-get update -y && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps
 WORKDIR /app
@@ -44,6 +44,9 @@ ENV DATABASE_URL="file:/app/data/coinkeeper.db"
 USER nextjs
 
 EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:8080/api/health || exit 1
 
 # Run migrations and start
 CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]
