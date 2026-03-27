@@ -66,10 +66,10 @@ export async function PATCH(
   }
 
   if (body.format !== undefined) {
-    const validFormats = ["csv", "json"];
+    const validFormats = ["csv", "json", "pdf"];
     if (!validFormats.includes(body.format)) {
       return NextResponse.json(
-        { error: "Invalid format. Must be csv or json" },
+        { error: "Invalid format. Must be csv, json, or pdf" },
         { status: 400 }
       );
     }
