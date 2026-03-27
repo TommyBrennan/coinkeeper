@@ -33,8 +33,10 @@ const {
   return {
     mockUser: {
       id: "user-1",
-      username: "testuser",
-      displayName: "Test User",
+      name: "Test User",
+      email: "test@example.com",
+      reminderDays: null,
+      baseCurrency: "USD",
       createdAt: new Date("2026-01-01"),
       updatedAt: new Date("2026-01-01"),
     },

@@ -9,8 +9,10 @@ import { NextRequest } from "next/server";
 
 export interface MockUser {
   id: string;
-  username: string;
-  displayName: string;
+  name: string;
+  email: string;
+  reminderDays: number | null;
+  baseCurrency: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,8 +20,10 @@ export interface MockUser {
 export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
   return {
     id: "user-1",
-    username: "testuser",
-    displayName: "Test User",
+    name: "Test User",
+    email: "test@example.com",
+    reminderDays: null,
+    baseCurrency: "USD",
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
     ...overrides,
@@ -118,7 +122,7 @@ export function createRequest(
     init.body = JSON.stringify(body);
   }
 
-  return new NextRequest(new URL(url, "http://localhost:3000"), init);
+  return new NextRequest(new URL(url, "http://localhost:3000"), init as never);
 }
 
 // ── Response helpers ───────────────────────────────────────────────────────
