@@ -37,9 +37,12 @@ export async function GET(
   });
 
   return NextResponse.json(
-    generated.map((g) => ({
-      ...g,
-      summary: g.summary ? JSON.parse(g.summary) : null,
-    }))
+    generated.map((g) => {
+      let summary = null;
+      if (g.summary) {
+        try { summary = JSON.parse(g.summary); } catch { /* invalid JSON, default to null */ }
+      }
+      return { ...g, summary };
+    })
   );
 }

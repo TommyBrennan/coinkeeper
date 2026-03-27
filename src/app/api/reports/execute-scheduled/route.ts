@@ -88,7 +88,8 @@ export async function POST() {
 
   for (const report of dueReports) {
     try {
-      const filters: ReportFilters = JSON.parse(report.filters);
+      let filters: ReportFilters = {};
+      try { filters = JSON.parse(report.filters); } catch { /* invalid JSON, default to empty filters */ }
       const context = await getSpaceContext(user.id);
 
       // Build where clause (same logic as generate endpoint)

@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       allowCredentials: user.credentials.map((cred) => ({
         id: cred.credentialId,
         transports: cred.transports
-          ? JSON.parse(cred.transports)
+          ? (() => { try { return JSON.parse(cred.transports); } catch { return undefined; } })()
           : undefined,
       })),
       userVerification: "preferred",

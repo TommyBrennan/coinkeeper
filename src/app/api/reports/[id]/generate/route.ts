@@ -65,7 +65,8 @@ export async function POST(
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
-  const filters: ReportFilters = JSON.parse(report.filters);
+  let filters: ReportFilters = {};
+  try { filters = JSON.parse(report.filters); } catch { /* invalid JSON, default to empty filters */ }
   const context = await getSpaceContext(user.id);
 
   // Build where clause
