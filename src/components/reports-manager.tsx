@@ -237,16 +237,17 @@ export function ReportsManager({ accounts, categories }: ReportsManagerProps) {
         return;
       }
 
-      if (report.format === "csv") {
-        // Download CSV file
+      if (report.format === "csv" || report.format === "pdf") {
+        // Download file (CSV or PDF)
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
+        const defaultName = report.format === "pdf" ? "report.pdf" : "report.csv";
         a.download =
           res.headers
             .get("Content-Disposition")
-            ?.match(/filename="(.+)"/)?.[1] || "report.csv";
+            ?.match(/filename="(.+)"/)?.[1] || defaultName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -832,6 +833,7 @@ function ReportForm({
           >
             <option value="csv">CSV (download)</option>
             <option value="json">JSON (preview)</option>
+            <option value="pdf">PDF (download)</option>
           </select>
         </div>
       </div>

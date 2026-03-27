@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const validFormats = ["csv", "json"];
+  const validFormats = ["csv", "json", "pdf"];
   const reportFormat = validFormats.includes(format) ? format : "csv";
 
   const report = await db.savedReport.create({
