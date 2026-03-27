@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseAndValidateBody } from "@/lib/api-utils";
+import { updateAccountSchema } from "@/lib/validations";
 
 // GET /api/accounts/[id] — get a single account
 export async function GET(
@@ -38,17 +39,9 @@ export async function PATCH(
     return NextResponse.json({ error: "Account not found" }, { status: 404 });
   }
 
-  const { data: body, error: parseError } = await parseJsonBody(request);
+  const { data: body, error: parseError } = await parseAndValidateBody(request, updateAccountSchema);
   if (parseError) return parseError;
   const { name, type, currency, balance, icon, color, isArchived, lowBalanceThreshold } = body;
-
-  const validTypes = ["cash", "bank", "wallet", "credit"];
-  if (type !== undefined && !validTypes.includes(type)) {
-    return NextResponse.json(
-      { error: `Account type must be one of: ${validTypes.join(", ")}` },
-      { status: 400 }
-    );
-  }
 
   const account = await db.account.update({
     where: { id },
@@ -61,8 +54,7 @@ export async function PATCH(
       ...(color !== undefined && { color }),
       ...(isArchived !== undefined && { isArchived }),
       ...(lowBalanceThreshold !== undefined && {
-        lowBalanceThreshold:
-          lowBalanceThreshold === null ? null : parseFloat(lowBalanceThreshold),
+        lowBalanceThreshold: lowBalanceThreshold ?? null,
       }),
     },
   });

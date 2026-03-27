@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateAuthenticationOptions } from "@simplewebauthn/server";
 import { db } from "@/lib/db";
 import { getWebAuthnConfig } from "@/lib/webauthn";
+import { parseAndValidateBody } from "@/lib/api-utils";
+import { loginOptionsSchema } from "@/lib/validations";
 
 /**
  * POST /api/auth/login/options
@@ -10,14 +12,9 @@ import { getWebAuthnConfig } from "@/lib/webauthn";
  */
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
-
-    if (!email) {
-      return NextResponse.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
-    }
+    const { data: body, error: parseError } = await parseAndValidateBody(req, loginOptionsSchema);
+    if (parseError) return parseError;
+    const { email } = body;
 
     // Find user and their credentials
     const user = await db.user.findUnique({

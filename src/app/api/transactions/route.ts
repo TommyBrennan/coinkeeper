@@ -4,7 +4,8 @@ import { requireApiUser } from "@/lib/auth";
 import { getSpaceContext, checkSpacePermission, getSpaceAccountIds } from "@/lib/space-context";
 import { checkLowBalance } from "@/lib/check-low-balance";
 import { checkUnusualSpending } from "@/lib/check-unusual-spending";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseAndValidateBody, validateQuery } from "@/lib/api-utils";
+import { createTransactionSchema, transactionQuerySchema } from "@/lib/validations";
 
 // GET /api/transactions — list transactions with optional filters
 export async function GET(request: NextRequest) {
@@ -16,12 +17,10 @@ export async function GET(request: NextRequest) {
   const context = await getSpaceContext(user.id);
   const { searchParams } = new URL(request.url);
 
-  const type = searchParams.get("type"); // expense, income, transfer
-  const accountId = searchParams.get("accountId");
-  const from = searchParams.get("from"); // ISO date
-  const to = searchParams.get("to"); // ISO date
-  const limit = parseInt(searchParams.get("limit") || "50", 10);
-  const offset = parseInt(searchParams.get("offset") || "0", 10);
+  const { data: query, error: queryError } = validateQuery(searchParams, transactionQuerySchema);
+  if (queryError) return queryError;
+
+  const { type, accountId, from, to, limit, offset } = query;
 
   const where: Record<string, unknown> = {};
 
@@ -103,7 +102,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const { data: body, error: parseError } = await parseJsonBody(request);
+  const { data: body, error: parseError } = await parseAndValidateBody(request, createTransactionSchema);
   if (parseError) return parseError;
 
   const {
@@ -122,23 +121,6 @@ export async function POST(request: NextRequest) {
     recurringFrequency,
     receiptId,
   } = body;
-
-  // Validate type
-  const validTypes = ["expense", "income", "transfer"];
-  if (!type || !validTypes.includes(type)) {
-    return NextResponse.json(
-      { error: `Type must be one of: ${validTypes.join(", ")}` },
-      { status: 400 }
-    );
-  }
-
-  // Validate amount
-  if (typeof amount !== "number" || amount <= 0) {
-    return NextResponse.json(
-      { error: "Amount must be a positive number" },
-      { status: 400 }
-    );
-  }
 
   // Validate account access (personal or space-scoped)
   if (fromAccountId) {
