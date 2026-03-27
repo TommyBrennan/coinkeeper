@@ -41,15 +41,16 @@
 - None
 
 ## Testing
-- Vitest with 136 tests (97 unit + 39 API integration)
+- Vitest with 224 tests (unit + API integration)
 - API tests use `vi.hoisted()` + `vi.mock()` pattern for mocked Prisma, auth, space-context
 - Test helpers in `src/app/api/__tests__/helpers.ts`
 
 ## Deployment
 - Local deploy script: `scripts/deploy-local.sh` (dev on :3000, prod on :8080)
 - Dev and prod instances running via standalone Next.js build
-- Docker/cb-deploy blocked: no /dev/net/tun, can't mount /proc in nested namespaces
-- To unblock cb-deploy: host container needs `--device /dev/net/tun --cap-add SYS_ADMIN` + AGENT_NAME + DOCKER_HOST
+- Docker/cb-deploy blocked: rootlesskit newuidmap only maps single UID, can't extract multi-UID images
+- Docker daemon starts but `docker pull`/`docker build` fails at lchown for GID 42 (shadow)
+- To unblock cb-deploy: need setuid-root newuidmap + AGENT_NAME + DOCKER_HOST
 
 ## Open Issues — P0
 - #81: Deploy — cb-deploy still blocked on container capabilities, local deploy working (PR #119 merged)
@@ -64,7 +65,7 @@
 ## Important Notes
 - Prisma v6 used (not v7) because v7 requires driver adapters
 - Git remote has PAT embedded in URL
-- Docker/cb-deploy blocked: no /dev/net/tun, can't mount /proc, AGENT_NAME not set
+- Docker/cb-deploy blocked: rootlesskit single-UID mapping + AGENT_NAME not set
 - TELEGRAM_BOT_TOKEN not set — bot code built but can't connect to Telegram
 - Exchange rate API: https://api.exchangerate-api.com/v4/latest/{currency} (free, no key)
 - ANTHROPIC_API_KEY needed for AI features (graceful degradation without it)
@@ -85,8 +86,12 @@
 - #115: Testing infrastructure — 97 unit tests (PR #116)
 - #117: API route integration tests — accounts + transactions (PR #118)
 - PR #119: Local deploy script + health check auth fix (merged)
+- #124: Zod input validation across API routes (PR #126)
+- #127: Safe JSON.parse wrappers across API routes (PR #128)
+- Currency validation in CSV import (direct commit)
 
 ## Next Session Priority
-1. Docker deployment (#81) — cb-deploy still blocked on container capabilities
+1. Docker deployment (#81) — cb-deploy blocked on rootless Docker UID mapping
 2. Telegram delivery blocked on bot token (#66)
-3. Consider additional polish: accessibility, more loading states, e2e tests
+3. Self-approve #125 (accessibility) after 2+ sessions with no objection
+4. Consider additional polish: e2e tests, more comprehensive browser testing
