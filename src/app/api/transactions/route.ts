@@ -4,6 +4,7 @@ import { requireApiUser } from "@/lib/auth";
 import { getSpaceContext, checkSpacePermission, getSpaceAccountIds } from "@/lib/space-context";
 import { checkLowBalance } from "@/lib/check-low-balance";
 import { checkUnusualSpending } from "@/lib/check-unusual-spending";
+import { parseJsonBody } from "@/lib/api-utils";
 
 // GET /api/transactions — list transactions with optional filters
 export async function GET(request: NextRequest) {
@@ -102,7 +103,8 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
 
   const {
     type,

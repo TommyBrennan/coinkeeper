@@ -3,11 +3,13 @@ import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { categorizeTransaction } from "@/lib/categorize";
 import { findSimilar, normalizeName } from "@/lib/category-normalize";
+import { parseJsonBody } from "@/lib/api-utils";
 
 // POST /api/categorize — AI-powered category suggestion
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
 
   const { description, amount } = body;
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { normalizeName } from "@/lib/category-normalize";
+import { parseJsonBody } from "@/lib/api-utils";
 
 // PATCH /api/categories/[id] — rename a category
 export async function PATCH(
@@ -10,7 +11,8 @@ export async function PATCH(
 ) {
   const user = await requireUser();
   const { id } = await params;
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
 
   const { name } = body;
   if (!name || typeof name !== "string" || !name.trim()) {

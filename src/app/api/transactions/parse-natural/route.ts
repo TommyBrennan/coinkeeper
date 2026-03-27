@@ -3,6 +3,7 @@ import { requireApiUser } from "@/lib/auth";
 import { parseNaturalLanguage } from "@/lib/parse-natural";
 import { categorizeTransaction } from "@/lib/categorize";
 import { db } from "@/lib/db";
+import { parseJsonBody } from "@/lib/api-utils";
 
 // POST /api/transactions/parse-natural — parse natural language into transaction fields
 export async function POST(request: NextRequest) {
@@ -11,7 +12,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
   const { text } = body;
 
   if (!text || typeof text !== "string" || text.trim().length === 0) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
+import { parseJsonBody } from "@/lib/api-utils";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -29,7 +30,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const body = await request.json();
+  const { data: body, error: parseError } = await parseJsonBody(request);
+  if (parseError) return parseError;
   const { email, role } = body;
 
   if (!email || typeof email !== "string" || !email.includes("@")) {
