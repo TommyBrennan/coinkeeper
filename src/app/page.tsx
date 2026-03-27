@@ -210,6 +210,7 @@ export default async function Dashboard() {
                         ? `${account.color}20`
                         : "rgb(243 244 246)",
                     }}
+                    aria-hidden="true"
                   >
                     {typeIcons[account.type] || "💵"}
                   </div>
@@ -228,6 +229,7 @@ export default async function Dashboard() {
                         : "text-gray-900 dark:text-gray-100"
                     }`}
                   >
+                    {account.balance < 0 && <span className="sr-only">Negative balance: </span>}
                     {formatMoney(account.balance, account.currency)}
                   </p>
                 </Link>
@@ -280,6 +282,7 @@ export default async function Dashboard() {
                             ? "rgb(37 99 235)"
                             : tx.category?.color || "rgb(107 114 128)",
                         }}
+                        aria-hidden="true"
                       >
                         {isTransfer
                           ? "⇄"
@@ -323,6 +326,7 @@ export default async function Dashboard() {
                                   : "text-gray-900 dark:text-gray-100"
                           }`}
                         >
+                          <span className="sr-only">{isExpense ? "Expense" : isIncome ? "Income" : "Transfer"}:</span>
                           {isExpense ? "-" : isIncome ? "+" : ""}
                           {formatMoney(tx.amount, tx.currency)}
                         </p>
@@ -366,9 +370,10 @@ function QuickAction({
   return (
     <Link
       href={href}
+      aria-label={label}
       className={`flex items-center gap-2 px-4 py-3 rounded-xl border font-medium text-sm transition-colors hover:opacity-80 ${color}`}
     >
-      <span className="text-lg">{icon}</span>
+      <span className="text-lg" aria-hidden="true">{icon}</span>
       {label}
     </Link>
   );

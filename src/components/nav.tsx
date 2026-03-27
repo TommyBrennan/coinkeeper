@@ -33,6 +33,7 @@ export async function Nav() {
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link
           href="/"
+          aria-label="CoinKeeper — Go to dashboard"
           className="flex items-center gap-2 font-semibold text-gray-900 dark:text-gray-100"
         >
           <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
@@ -42,6 +43,7 @@ export async function Nav() {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -53,7 +55,7 @@ export async function Nav() {
           CoinKeeper
         </Link>
 
-        <nav className="flex items-center gap-1">
+        <nav aria-label="Main navigation" className="flex items-center gap-1">
           <Link
             href="/transactions"
             className="px-3 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -145,9 +147,10 @@ export async function Nav() {
               activeSpaceId={spaceContext.spaceId}
               activeSpaceName={spaceContext.spaceName}
             />
-            <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">
+            <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline" aria-label={`Logged in as ${session.user.name}`}>
               {session.user.name}
             </span>
+            <span className="sr-only sm:hidden">Logged in as {session.user.name}</span>
             <LogoutButton />
           </div>
         </nav>

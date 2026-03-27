@@ -67,10 +67,10 @@ const TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color:
   },
 };
 
-const PRIORITY_DOT: Record<string, string> = {
-  high: "bg-red-500",
-  medium: "bg-yellow-500",
-  low: "bg-green-500",
+const PRIORITY_DOT: Record<string, { color: string; label: string }> = {
+  high: { color: "bg-red-500", label: "High priority" },
+  medium: { color: "bg-yellow-500", label: "Medium priority" },
+  low: { color: "bg-green-500", label: "Low priority" },
 };
 
 function timeAgo(dateStr: string): string {
@@ -107,16 +107,25 @@ function NotificationItem({
       }`}
     >
       {/* Type icon */}
-      <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${config.color}`}>
+      <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${config.color}`} aria-hidden="true">
         {config.icon}
       </div>
 
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          {!notification.read && (
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_DOT[notification.priority] || PRIORITY_DOT.medium}`} />
-          )}
+          {!notification.read && (() => {
+            const priority = PRIORITY_DOT[notification.priority] || PRIORITY_DOT.medium;
+            return (
+              <>
+                <span
+                  className={`w-2 h-2 rounded-full flex-shrink-0 ${priority.color}`}
+                  aria-hidden="true"
+                />
+                <span className="sr-only">{priority.label}</span>
+              </>
+            );
+          })()}
           <h3 className={`text-sm font-semibold truncate ${notification.read ? "text-gray-600 dark:text-gray-400" : "text-gray-900 dark:text-gray-100"}`}>
             {notification.title}
           </h3>
@@ -135,18 +144,18 @@ function NotificationItem({
       </div>
 
       {/* Actions */}
-      <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
         <button
           onClick={() => onMarkRead(notification.id, !notification.read)}
           className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-          title={notification.read ? "Mark unread" : "Mark read"}
+          aria-label={notification.read ? "Mark as unread" : "Mark as read"}
         >
           {notification.read ? (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 9v.906a2.25 2.25 0 0 1-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 0 0 1.183 1.981l6.478 3.488m8.839 2.51-4.66-2.51m0 0-1.023-.55a2.25 2.25 0 0 0-2.134 0l-1.022.55m0 0-4.661 2.51m16.5 1.615a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V8.844a2.25 2.25 0 0 1 1.183-1.981l7.5-4.039a2.25 2.25 0 0 1 2.134 0l7.5 4.039a2.25 2.25 0 0 1 1.183 1.98V19.5Z" />
             </svg>
           ) : (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
             </svg>
           )}
@@ -154,9 +163,9 @@ function NotificationItem({
         <button
           onClick={() => onDelete(notification.id)}
           className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-          title="Delete"
+          aria-label="Delete notification"
         >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
           </svg>
         </button>
@@ -167,7 +176,7 @@ function NotificationItem({
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-3">
+    <div className="space-y-3" role="status" aria-label="Loading notifications">
       {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 animate-pulse">
           <div className="flex items-start gap-3">
@@ -280,9 +289,11 @@ export function NotificationCenter() {
     <div className="space-y-4">
       {/* Controls */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1" role="tablist" aria-label="Notification filters">
           <button
             onClick={() => setFilter("all")}
+            role="tab"
+            aria-selected={filter === "all"}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               filter === "all"
                 ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
@@ -293,6 +304,8 @@ export function NotificationCenter() {
           </button>
           <button
             onClick={() => setFilter("unread")}
+            role="tab"
+            aria-selected={filter === "unread"}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               filter === "unread"
                 ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm"
@@ -323,7 +336,7 @@ export function NotificationCenter() {
 
       {/* Error */}
       {!loading && error && (
-        <div className="text-center py-12 border-2 border-dashed border-red-200 dark:border-red-800/50 rounded-xl">
+        <div role="alert" className="text-center py-12 border-2 border-dashed border-red-200 dark:border-red-800/50 rounded-xl">
           <svg className="w-12 h-12 mx-auto text-red-300 dark:text-red-600 mb-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
           </svg>

@@ -417,13 +417,13 @@ export function ReceiptUploadForm() {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
+        <div role="alert" className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-sm">
           {error}
         </div>
       )}
 
       {warning && (
-        <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
+        <div role="status" className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-sm">
           {warning}
         </div>
       )}
@@ -436,6 +436,10 @@ export function ReceiptUploadForm() {
           onDragOver={handleDrag}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload receipt image — drag and drop or click to browse"
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInputRef.current?.click(); } }}
           className={`relative flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${
             dragActive
               ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20"
@@ -448,6 +452,7 @@ export function ReceiptUploadForm() {
             accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={handleFileInput}
             className="hidden"
+            aria-label="Choose receipt image file"
           />
           <svg
             className={`w-12 h-12 mb-4 ${
@@ -477,7 +482,7 @@ export function ReceiptUploadForm() {
 
       {/* Step 2: Parsing */}
       {step === "parsing" && (
-        <div className="flex flex-col items-center py-12 space-y-4">
+        <div className="flex flex-col items-center py-12 space-y-4" role="status" aria-label="Analyzing receipt">
           {previewUrl && (
             <div className="w-48 h-48 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -493,6 +498,7 @@ export function ReceiptUploadForm() {
               className="w-5 h-5 text-emerald-500 animate-spin"
               fill="none"
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <circle
                 className="opacity-25"
@@ -533,10 +539,11 @@ export function ReceiptUploadForm() {
             <div className="flex-1 space-y-4">
               {/* Merchant */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label htmlFor="receipt-merchant" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Merchant
                 </label>
                 <input
+                  id="receipt-merchant"
                   type="text"
                   value={merchant}
                   onChange={(e) => setMerchant(e.target.value)}
@@ -546,10 +553,11 @@ export function ReceiptUploadForm() {
               </div>
               {/* Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label htmlFor="receipt-date" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Date
                 </label>
                 <input
+                  id="receipt-date"
                   type="date"
                   value={receiptDate}
                   onChange={(e) => setReceiptDate(e.target.value)}
@@ -558,10 +566,11 @@ export function ReceiptUploadForm() {
               </div>
               {/* Currency */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                <label htmlFor="receipt-currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                   Currency
                 </label>
                 <input
+                  id="receipt-currency"
                   type="text"
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value.toUpperCase())}
@@ -640,6 +649,7 @@ export function ReceiptUploadForm() {
                         onChange={(e) =>
                           updateLineItem(index, "selected", e.target.checked)
                         }
+                        aria-label={`Include ${item.name || `item ${index + 1}`} in transaction`}
                         className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                       />
                     </div>
@@ -654,6 +664,7 @@ export function ReceiptUploadForm() {
                             updateLineItem(index, "name", e.target.value)
                           }
                           placeholder="Item name"
+                          aria-label={`Item ${index + 1} name`}
                           className="flex-1 px-2 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
                         <input
@@ -668,8 +679,8 @@ export function ReceiptUploadForm() {
                           }
                           min="0"
                           step="1"
+                          aria-label={`Item ${index + 1} quantity`}
                           className="w-16 px-2 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent text-sm text-gray-900 dark:text-gray-100 text-center tabular-nums focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                          title="Quantity"
                         />
                         <input
                           type="number"
@@ -684,6 +695,7 @@ export function ReceiptUploadForm() {
                           min="0"
                           step="0.01"
                           placeholder="Unit price"
+                          aria-label={`Item ${index + 1} unit price`}
                           className="w-24 px-2 py-1.5 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent text-sm text-gray-900 dark:text-gray-100 tabular-nums text-right focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         />
                         <div className="w-24 px-2 py-1.5 text-sm text-right tabular-nums font-medium text-gray-900 dark:text-gray-100">
@@ -698,6 +710,7 @@ export function ReceiptUploadForm() {
                           onChange={(e) =>
                             updateLineItem(index, "categoryId", e.target.value)
                           }
+                          aria-label={`Category for ${item.name || `item ${index + 1}`}`}
                           className="flex-1 px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 bg-transparent text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-emerald-500"
                         >
                           <option value="">No category</option>
@@ -722,9 +735,9 @@ export function ReceiptUploadForm() {
                           type="button"
                           onClick={() => removeLineItem(index)}
                           className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                          title="Remove item"
+                          aria-label={`Remove ${item.name || `item ${index + 1}`}`}
                         >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
                           </svg>
                         </button>
@@ -764,10 +777,11 @@ export function ReceiptUploadForm() {
 
           {/* Account selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label htmlFor="receipt-account" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
               Debit Account
             </label>
             <select
+              id="receipt-account"
               value={accountId}
               onChange={(e) => setAccountId(e.target.value)}
               className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
