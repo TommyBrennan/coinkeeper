@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseAndValidateBody } from "@/lib/api-utils";
+import { updateSpaceSchema } from "@/lib/validations";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -71,27 +72,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const { data: body, error: parseError } = await parseJsonBody(request);
+  const { data: body, error: parseError } = await parseAndValidateBody(request, updateSpaceSchema);
   if (parseError) return parseError;
-  const { name } = body;
+  const { name, description } = body;
 
-  if (!name || typeof name !== "string" || name.trim().length === 0) {
-    return NextResponse.json(
-      { error: "Space name is required" },
-      { status: 400 }
-    );
-  }
-
-  if (name.trim().length > 100) {
-    return NextResponse.json(
-      { error: "Space name must be 100 characters or less" },
-      { status: 400 }
-    );
-  }
+  const updateData: Record<string, unknown> = {};
+  if (name !== undefined) updateData.name = name.trim();
+  if (description !== undefined) updateData.description = description?.trim() || null;
 
   const updated = await db.space.update({
     where: { id },
-    data: { name: name.trim() },
+    data: updateData,
   });
 
   return NextResponse.json(updated);

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseAndValidateBody } from "@/lib/api-utils";
+import { inviteMemberSchema } from "@/lib/validations";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -30,33 +31,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const { data: body, error: parseError } = await parseJsonBody(request);
+  const { data: body, error: parseError } = await parseAndValidateBody(request, inviteMemberSchema);
   if (parseError) return parseError;
   const { email, role } = body;
 
-  if (!email || typeof email !== "string" || !email.includes("@")) {
-    return NextResponse.json(
-      { error: "A valid email address is required" },
-      { status: 400 }
-    );
-  }
-
-  const validRoles = ["editor", "viewer"];
-  // Only owners can invite other owners
-  if (role === "owner" && callerMembership.role !== "owner") {
-    return NextResponse.json(
-      { error: "Only owners can grant owner role" },
-      { status: 403 }
-    );
-  }
-
-  const assignRole = role && ["owner", "editor", "viewer"].includes(role) ? role : "editor";
-  if (role && !["owner", "editor", "viewer"].includes(role)) {
-    return NextResponse.json(
-      { error: `Invalid role. Must be one of: owner, ${validRoles.join(", ")}` },
-      { status: 400 }
-    );
-  }
+  // Only owners can invite other owners (role from schema is "editor" | "viewer")
+  const assignRole = role;
 
   // Find user by email
   const invitee = await db.user.findUnique({

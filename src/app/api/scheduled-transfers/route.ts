@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { calculateNextExecution } from "@/lib/schedule";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseAndValidateBody } from "@/lib/api-utils";
+import { createScheduledTransferSchema } from "@/lib/validations";
 
 // ─── GET /api/scheduled-transfers ───────────────────────────────────
 
@@ -36,14 +37,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const user = await requireUser();
-  const { data: body, error: parseError } = await parseJsonBody(request);
+  const { data: body, error: parseError } = await parseAndValidateBody(request, createScheduledTransferSchema);
   if (parseError) return parseError;
 
   const {
     fromAccountId,
     toAccountId,
     amount,
-    rateMode,
+    rateMode: effectiveRateMode,
     manualRate,
     finalAmount,
     description,
@@ -54,59 +55,6 @@ export async function POST(request: NextRequest) {
     startDate,
     endDate,
   } = body;
-
-  // Validate required fields
-  if (!fromAccountId || !toAccountId) {
-    return NextResponse.json(
-      { error: "Both source and destination accounts are required" },
-      { status: 400 }
-    );
-  }
-
-  if (fromAccountId === toAccountId) {
-    return NextResponse.json(
-      { error: "Source and destination accounts must be different" },
-      { status: 400 }
-    );
-  }
-
-  if (typeof amount !== "number" || amount <= 0) {
-    return NextResponse.json(
-      { error: "Amount must be a positive number" },
-      { status: 400 }
-    );
-  }
-
-  const validFrequencies = ["daily", "weekly", "monthly"];
-  if (!frequency || !validFrequencies.includes(frequency)) {
-    return NextResponse.json(
-      { error: `Frequency must be one of: ${validFrequencies.join(", ")}` },
-      { status: 400 }
-    );
-  }
-
-  const validRateModes = ["auto", "manual", "final"];
-  const effectiveRateMode = rateMode || "auto";
-  if (!validRateModes.includes(effectiveRateMode)) {
-    return NextResponse.json(
-      { error: `Rate mode must be one of: ${validRateModes.join(", ")}` },
-      { status: 400 }
-    );
-  }
-
-  if (effectiveRateMode === "manual" && (typeof manualRate !== "number" || manualRate <= 0)) {
-    return NextResponse.json(
-      { error: "Manual rate must be a positive number" },
-      { status: 400 }
-    );
-  }
-
-  if (effectiveRateMode === "final" && (typeof finalAmount !== "number" || finalAmount <= 0)) {
-    return NextResponse.json(
-      { error: "Final amount must be a positive number" },
-      { status: 400 }
-    );
-  }
 
   // Validate account ownership
   const fromAccount = await db.account.findFirst({
@@ -129,15 +77,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const interval = Math.max(1, parseInt(rawInterval, 10) || 1);
-  const parsedDayOfWeek =
-    typeof dayOfWeek === "number" && dayOfWeek >= 0 && dayOfWeek <= 6
-      ? dayOfWeek
-      : null;
-  const parsedDayOfMonth =
-    typeof dayOfMonth === "number" && dayOfMonth >= 1 && dayOfMonth <= 31
-      ? dayOfMonth
-      : null;
+  const interval = rawInterval;
+  const parsedDayOfWeek = dayOfWeek ?? null;
+  const parsedDayOfMonth = dayOfMonth ?? null;
 
   // Calculate first execution
   const baseDate = startDate ? new Date(startDate) : new Date();

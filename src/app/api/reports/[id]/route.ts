@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { calculateNextRunAt } from "@/lib/report-schedule";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseAndValidateBody } from "@/lib/api-utils";
+import { updateReportSchema } from "@/lib/validations";
 
 // GET /api/reports/[id] — get a single saved report
 export async function GET(
@@ -50,17 +51,11 @@ export async function PATCH(
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
-  const { data: body, error: parseError } = await parseJsonBody(request);
+  const { data: body, error: parseError } = await parseAndValidateBody(request, updateReportSchema);
   if (parseError) return parseError;
   const data: Record<string, unknown> = {};
 
   if (body.name !== undefined) {
-    if (typeof body.name !== "string" || body.name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Name cannot be empty" },
-        { status: 400 }
-      );
-    }
     data.name = body.name.trim();
   }
 
@@ -69,23 +64,10 @@ export async function PATCH(
   }
 
   if (body.format !== undefined) {
-    const validFormats = ["csv", "json", "pdf"];
-    if (!validFormats.includes(body.format)) {
-      return NextResponse.json(
-        { error: "Invalid format. Must be csv, json, or pdf" },
-        { status: 400 }
-      );
-    }
     data.format = body.format;
   }
 
   if (body.filters !== undefined) {
-    if (typeof body.filters !== "object") {
-      return NextResponse.json(
-        { error: "Filters must be an object" },
-        { status: 400 }
-      );
-    }
     data.filters = JSON.stringify(body.filters);
   }
 

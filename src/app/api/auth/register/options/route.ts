@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateRegistrationOptions } from "@simplewebauthn/server";
 import { db } from "@/lib/db";
 import { getWebAuthnConfig } from "@/lib/webauthn";
+import { parseAndValidateBody } from "@/lib/api-utils";
+import { registerOptionsSchema } from "@/lib/validations";
 
 /**
  * POST /api/auth/register/options
@@ -10,14 +12,9 @@ import { getWebAuthnConfig } from "@/lib/webauthn";
  */
 export async function POST(req: NextRequest) {
   try {
-    const { name, email } = await req.json();
-
-    if (!name || !email) {
-      return NextResponse.json(
-        { error: "Name and email are required" },
-        { status: 400 }
-      );
-    }
+    const { data: body, error: parseError } = await parseAndValidateBody(req, registerOptionsSchema);
+    if (parseError) return parseError;
+    const { name, email } = body;
 
     // Check if email already taken
     const existing = await db.user.findUnique({ where: { email } });

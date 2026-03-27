@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
-import { parseJsonBody } from "@/lib/api-utils";
+import { parseAndValidateBody } from "@/lib/api-utils";
+import { createSpaceSchema } from "@/lib/validations";
 
 // GET /api/spaces — list spaces the current user belongs to
 export async function GET() {
@@ -42,23 +43,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: body, error: parseError } = await parseJsonBody(request);
+  const { data: body, error: parseError } = await parseAndValidateBody(request, createSpaceSchema);
   if (parseError) return parseError;
   const { name } = body;
-
-  if (!name || typeof name !== "string" || name.trim().length === 0) {
-    return NextResponse.json(
-      { error: "Space name is required" },
-      { status: 400 }
-    );
-  }
-
-  if (name.trim().length > 100) {
-    return NextResponse.json(
-      { error: "Space name must be 100 characters or less" },
-      { status: 400 }
-    );
-  }
 
   const space = await db.space.create({
     data: {
