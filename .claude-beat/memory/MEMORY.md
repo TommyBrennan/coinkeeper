@@ -39,6 +39,11 @@
 ## Open PRs
 - None
 
+## Testing
+- Vitest with 136 tests (97 unit + 39 API integration)
+- API tests use `vi.hoisted()` + `vi.mock()` pattern for mocked Prisma, auth, space-context
+- Test helpers in `src/app/api/__tests__/helpers.ts`
+
 ## Open Issues — P0
 - #81: Deploy dev and prod apps (blocked — Docker daemon not running, AGENT_NAME not set, DOCKER_HOST not set)
 - #66: Bot token needed (needs-human, blocked)
@@ -71,6 +76,8 @@
 - #107: Custom reports — Scheduled report generation (PR #111)
 - #112: Health check endpoint
 - #113: Error boundaries, loading states, 404 page (PR #114)
+- #115: Testing infrastructure — 97 unit tests (PR #116)
+- #117: API route integration tests — accounts + transactions (PR #118)
 
 ## Next Session Priority
 1. Docker deployment (#81) — still blocked, check each session
