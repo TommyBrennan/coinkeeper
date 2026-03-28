@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
 import { parseReceiptImage, ParsedReceipt } from "@/lib/receipt-parser";
 
 const ALLOWED_MIME: Record<string, "image/jpeg" | "image/png" | "image/webp" | "image/gif"> = {
@@ -18,7 +18,10 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await params;
 
   const receipt = await db.receipt.findUnique({ where: { id, userId: user.id } });
@@ -49,7 +52,16 @@ export async function POST(
   }
 
   const base64 = buffer.toString("base64");
-  const parsedData: ParsedReceipt = await parseReceiptImage(base64, mimeType);
+  let parsedData: ParsedReceipt;
+  try {
+    parsedData = await parseReceiptImage(base64, mimeType);
+  } catch (err) {
+    console.error("Receipt parsing failed:", err);
+    return NextResponse.json(
+      { error: "Failed to parse receipt image. The AI service may be unavailable." },
+      { status: 502 }
+    );
+  }
 
   // Update receipt record with parsed data
   const updated = await db.receipt.update({

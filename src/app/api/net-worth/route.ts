@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
 import { fetchExchangeRate } from "@/lib/exchange-rate";
 
 export async function GET(request: NextRequest) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const baseCurrency = (
     request.nextUrl.searchParams.get("baseCurrency") || "USD"
   ).toUpperCase();

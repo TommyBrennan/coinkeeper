@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
 import { calculateNextExecution } from "@/lib/schedule";
 import { parseAndValidateBody } from "@/lib/api-utils";
 import { createScheduledTransferSchema } from "@/lib/validations";
@@ -8,7 +8,10 @@ import { createScheduledTransferSchema } from "@/lib/validations";
 // ─── GET /api/scheduled-transfers ───────────────────────────────────
 
 export async function GET(request: NextRequest) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { searchParams } = new URL(request.url);
 
   const active = searchParams.get("active"); // "true" or "false"
@@ -36,7 +39,10 @@ export async function GET(request: NextRequest) {
 // ─── POST /api/scheduled-transfers ──────────────────────────────────
 
 export async function POST(request: NextRequest) {
-  const user = await requireUser();
+  const { user, error: authError } = await requireApiUser();
+  if (authError) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { data: body, error: parseError } = await parseAndValidateBody(request, createScheduledTransferSchema);
   if (parseError) return parseError;
 

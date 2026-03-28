@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
 import { normalizeName } from "@/lib/category-normalize";
 import { parseJsonBody } from "@/lib/api-utils";
 
@@ -9,7 +9,10 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await params;
   const { data: body, error: parseError } = await parseJsonBody(request);
   if (parseError) return parseError;
@@ -65,7 +68,10 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await requireUser();
+  const { user, error: authError } = await requireApiUser();
+  if (authError) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await params;
 
   // Verify category belongs to user

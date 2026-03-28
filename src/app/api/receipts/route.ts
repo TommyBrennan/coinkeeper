@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
 import { parseReceiptImage, ParsedReceipt } from "@/lib/receipt-parser";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "receipts");
@@ -22,7 +22,10 @@ function isAllowedType(type: string): type is AllowedMimeType {
 
 // GET /api/receipts — list receipts for current user
 export async function GET(request: NextRequest) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get("limit") || "20", 10);
   const offset = parseInt(searchParams.get("offset") || "0", 10);
@@ -54,7 +57,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/receipts — upload receipt image and optionally parse with AI
 export async function POST(request: NextRequest) {
-  const user = await requireUser();
+  const { user, error: authError } = await requireApiUser();
+  if (authError) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.includes("multipart/form-data")) {
