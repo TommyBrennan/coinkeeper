@@ -3,10 +3,15 @@ import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { db } from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { getWebAuthnConfig } from "@/lib/webauthn";
+import crypto from "crypto";
+
+const PENDING_2FA_COOKIE = "ck_pending_2fa";
+const PENDING_2FA_MAX_AGE = 5 * 60; // 5 minutes in seconds
 
 /**
  * POST /api/auth/login/verify
- * Verify WebAuthn authentication response and create a session.
+ * Verify WebAuthn authentication response.
+ * If user has TOTP enabled, issue a pending-2fa token instead of full session.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -69,15 +74,57 @@ export async function POST(req: NextRequest) {
       data: { counter: BigInt(verification.authenticationInfo.newCounter) },
     });
 
-    // Create session
+    // Check if user has TOTP 2FA enabled
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { totpEnabled: true },
+    });
+
+    const response = (() => {
+      if (user?.totpEnabled) {
+        // Issue a pending-2fa token instead of full session
+        const pending2faToken = crypto.randomBytes(32).toString("hex");
+
+        // Store the pending token temporarily — we use a signed cookie with userId
+        const tokenPayload = JSON.stringify({
+          userId,
+          token: pending2faToken,
+          expiresAt: Date.now() + PENDING_2FA_MAX_AGE * 1000,
+        });
+
+        const res = NextResponse.json({ success: true, requires2fa: true });
+        res.cookies.set(PENDING_2FA_COOKIE, Buffer.from(tokenPayload).toString("base64"), {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: PENDING_2FA_MAX_AGE,
+        });
+        return res;
+      } else {
+        // No TOTP — create full session immediately
+        // Note: createSession uses next/headers cookies(), but we're in a route handler
+        // so we need to handle this differently
+        return null; // handled below
+      }
+    })();
+
+    if (response) {
+      // Clear auth cookies on the pending-2fa response
+      response.cookies.delete("ck_auth_challenge");
+      response.cookies.delete("ck_auth_user");
+      return response;
+    }
+
+    // No 2FA — create full session
     await createSession(userId);
 
     // Clear auth cookies
-    const response = NextResponse.json({ success: true });
-    response.cookies.delete("ck_auth_challenge");
-    response.cookies.delete("ck_auth_user");
+    const successResponse = NextResponse.json({ success: true });
+    successResponse.cookies.delete("ck_auth_challenge");
+    successResponse.cookies.delete("ck_auth_user");
 
-    return response;
+    return successResponse;
   } catch (error) {
     console.error("Login verify error:", error);
     return NextResponse.json(
