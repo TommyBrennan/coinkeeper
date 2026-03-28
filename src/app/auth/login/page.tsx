@@ -44,6 +44,14 @@ export default function LoginPage() {
         throw new Error(data.error || "Login failed");
       }
 
+      const verifyData = await verifyRes.json();
+
+      // Check if 2FA is required
+      if (verifyData.requires2fa) {
+        window.location.href = "/auth/totp-verify";
+        return;
+      }
+
       // Success — redirect to dashboard
       window.location.href = "/";
     } catch (err) {

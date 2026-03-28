@@ -3,18 +3,22 @@
  * Tests setup, enable, disable, status, and backup-codes endpoints.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 import { createRequest, parseResponse } from "./helpers";
 
 // ── Hoisted mocks ────────────────────────────────────────────────────────
 
 const {
   mockUserModel,
+  mockSessionModel,
   mockRequireApiUser,
   mockGenerateTotpSecret,
   mockGenerateTotpUri,
   mockGenerateQrCodeDataUrl,
   mockVerifyTotpToken,
+  mockVerifyBackupCode,
   mockGenerateBackupCodes,
+  mockCreateSession,
 } = vi.hoisted(() => {
   const createModel = () => ({
     findMany: vi.fn().mockResolvedValue([]),
@@ -29,21 +33,25 @@ const {
 
   return {
     mockUserModel: createModel(),
+    mockSessionModel: createModel(),
     mockRequireApiUser: vi.fn(),
     mockGenerateTotpSecret: vi.fn().mockReturnValue("JBSWY3DPEHPK3PXP"),
     mockGenerateTotpUri: vi.fn().mockReturnValue("otpauth://totp/CoinKeeper:test@example.com?secret=JBSWY3DPEHPK3PXP"),
     mockGenerateQrCodeDataUrl: vi.fn().mockResolvedValue("data:image/png;base64,test-qr"),
     mockVerifyTotpToken: vi.fn().mockReturnValue(true),
+    mockVerifyBackupCode: vi.fn().mockReturnValue(0),
     mockGenerateBackupCodes: vi.fn().mockReturnValue({
       plain: ["ABCD-1234", "EFGH-5678"],
       hashed: ["hash1", "hash2"],
     }),
+    mockCreateSession: vi.fn().mockResolvedValue("mock-session-token"),
   };
 });
 
 vi.mock("@/lib/db", () => ({
   db: {
     user: mockUserModel,
+    session: mockSessionModel,
     $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn({ user: mockUserModel })),
   },
 }));
@@ -59,7 +67,11 @@ vi.mock("@/lib/totp", () => ({
   verifyTotpToken: mockVerifyTotpToken,
   generateBackupCodes: mockGenerateBackupCodes,
   hashBackupCode: vi.fn().mockReturnValue("mocked-hash"),
-  verifyBackupCode: vi.fn().mockReturnValue(0),
+  verifyBackupCode: mockVerifyBackupCode,
+}));
+
+vi.mock("@/lib/session", () => ({
+  createSession: mockCreateSession,
 }));
 
 const mockUser = {
@@ -399,6 +411,153 @@ describe("POST /api/auth/totp/backup-codes", () => {
     const request = createRequest("/api/auth/totp/backup-codes", {
       method: "POST",
       body: { code: "123456" },
+    });
+    const response = await POST(request);
+    const { status } = await parseResponse(response);
+
+    expect(status).toBe(400);
+  });
+});
+
+// ── /api/auth/totp/verify (login 2FA) ────────────────────────────────────
+
+describe("POST /api/auth/totp/verify", () => {
+  function makePendingCookie(overrides: Record<string, unknown> = {}) {
+    const payload = {
+      userId: "user-1",
+      token: "test-pending-token",
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 min from now
+      ...overrides,
+    };
+    return Buffer.from(JSON.stringify(payload)).toString("base64");
+  }
+
+  function createRequestWithCookie(
+    url: string,
+    options: { method?: string; body?: unknown; cookie?: string }
+  ) {
+    const { method = "POST", body, cookie } = options;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (cookie) {
+      headers["Cookie"] = cookie;
+    }
+    const init: RequestInit = { method, headers };
+    if (body !== undefined) {
+      init.body = JSON.stringify(body);
+    }
+    return new NextRequest(new URL(url, "http://localhost:3000"), init as never);
+  }
+
+  it("should verify TOTP code and create session", async () => {
+    mockUserModel.findUnique.mockResolvedValue({
+      id: "user-1",
+      totpEnabled: true,
+      totpSecret: "JBSWY3DPEHPK3PXP",
+      totpBackupCodes: JSON.stringify(["hash1", "hash2"]),
+    });
+    mockVerifyTotpToken.mockReturnValue(true);
+
+    const { POST } = await import("@/app/api/auth/totp/verify/route");
+    const request = createRequestWithCookie("/api/auth/totp/verify", {
+      body: { code: "123456" },
+      cookie: `ck_pending_2fa=${makePendingCookie()}`,
+    });
+    const response = await POST(request);
+    const { status, data } = await parseResponse<{ success: boolean }>(response);
+
+    expect(status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(mockCreateSession).toHaveBeenCalledWith("user-1");
+  });
+
+  it("should verify backup code and consume it", async () => {
+    mockUserModel.findUnique.mockResolvedValue({
+      id: "user-1",
+      totpEnabled: true,
+      totpSecret: "JBSWY3DPEHPK3PXP",
+      totpBackupCodes: JSON.stringify(["hash1", "hash2", "hash3"]),
+    });
+    mockVerifyTotpToken.mockReturnValue(false);
+    mockVerifyBackupCode.mockReturnValue(1); // matches index 1
+
+    const { POST } = await import("@/app/api/auth/totp/verify/route");
+    const request = createRequestWithCookie("/api/auth/totp/verify", {
+      body: { code: "ABCD-1234" },
+      cookie: `ck_pending_2fa=${makePendingCookie()}`,
+    });
+    const response = await POST(request);
+    const { status, data } = await parseResponse<{
+      success: boolean;
+      backupCodeUsed: boolean;
+      backupCodesRemaining: number;
+    }>(response);
+
+    expect(status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.backupCodeUsed).toBe(true);
+    expect(data.backupCodesRemaining).toBe(2);
+    expect(mockCreateSession).toHaveBeenCalledWith("user-1");
+    // Verify the backup code was removed from storage
+    expect(mockUserModel.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { totpBackupCodes: JSON.stringify(["hash1", "hash3"]) },
+    });
+  });
+
+  it("should reject invalid code", async () => {
+    mockUserModel.findUnique.mockResolvedValue({
+      id: "user-1",
+      totpEnabled: true,
+      totpSecret: "JBSWY3DPEHPK3PXP",
+      totpBackupCodes: JSON.stringify(["hash1"]),
+    });
+    mockVerifyTotpToken.mockReturnValue(false);
+    mockVerifyBackupCode.mockReturnValue(-1);
+
+    const { POST } = await import("@/app/api/auth/totp/verify/route");
+    const request = createRequestWithCookie("/api/auth/totp/verify", {
+      body: { code: "000000" },
+      cookie: `ck_pending_2fa=${makePendingCookie()}`,
+    });
+    const response = await POST(request);
+    const { status, data } = await parseResponse<{ error: string }>(response);
+
+    expect(status).toBe(401);
+    expect(data.error).toContain("Invalid verification code");
+  });
+
+  it("should reject missing pending-2fa cookie", async () => {
+    const { POST } = await import("@/app/api/auth/totp/verify/route");
+    const request = createRequestWithCookie("/api/auth/totp/verify", {
+      body: { code: "123456" },
+    });
+    const response = await POST(request);
+    const { status, data } = await parseResponse<{ error: string }>(response);
+
+    expect(status).toBe(401);
+    expect(data.error).toContain("No pending 2FA session");
+  });
+
+  it("should reject expired pending-2fa token", async () => {
+    const { POST } = await import("@/app/api/auth/totp/verify/route");
+    const request = createRequestWithCookie("/api/auth/totp/verify", {
+      body: { code: "123456" },
+      cookie: `ck_pending_2fa=${makePendingCookie({ expiresAt: Date.now() - 1000 })}`,
+    });
+    const response = await POST(request);
+    const { status, data } = await parseResponse<{ error: string }>(response);
+
+    expect(status).toBe(401);
+    expect(data.error).toContain("expired");
+  });
+
+  it("should reject missing code in body", async () => {
+    const { POST } = await import("@/app/api/auth/totp/verify/route");
+    const request = createRequestWithCookie("/api/auth/totp/verify", {
+      body: {},
+      cookie: `ck_pending_2fa=${makePendingCookie()}`,
     });
     const response = await POST(request);
     const { status } = await parseResponse(response);
