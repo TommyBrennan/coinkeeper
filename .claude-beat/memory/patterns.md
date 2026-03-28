@@ -37,6 +37,8 @@
 - Zod v4 (^4.3.6) installed — uses `.issues` not `.errors`, enum second arg is string message not `{errorMap}`, `z.record(z.string(), z.unknown())` not `z.record(z.unknown())`
 - Docker rootless: can start daemon via `rootlesskit --net=host --copy-up=/run -- dockerd --storage-driver vfs --bridge=none`, but image builds fail due to single-UID namespace (lchown for GID 42 fails). No CAP_SETUID, no setuid-root newuidmap.
 - Docker deploy requires AGENT_NAME env var + either host Docker socket or DOCKER_HOST env var
+- API routes must use `requireApiUser()` (returns `{ user, error }` for JSON 401), NOT `requireUser()` (uses redirect)
+- When changing auth patterns in routes, also update test mocks in `src/app/api/__tests__/`
 - Local deploy: use `scripts/local-deploy.sh` — dev on port 3000 (next dev), prod on port 8080 (standalone)
 - Standalone build needs static files copied: `cp -r .next/static .next/standalone/.next/static`
 - Disk space improved: ~17GB free (previously was ~500MB)

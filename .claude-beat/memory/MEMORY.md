@@ -89,9 +89,10 @@
 - #124: Zod input validation across API routes (PR #126)
 - #127: Safe JSON.parse wrappers across API routes (PR #128)
 - Currency validation in CSV import (direct commit)
+- #140: Consistent API error handling — requireApiUser + try-catch (PR #141)
 
 ## Next Session Priority
 1. Docker deployment (#81) — cb-deploy blocked on rootless Docker UID mapping
 2. Telegram delivery blocked on bot token (#66)
-3. Self-approve #125 (accessibility) after 2+ sessions with no objection
+3. Consider refactoring large components (reports-manager 1228 lines, receipt-upload-form 847 lines)
 4. Consider additional polish: e2e tests, more comprehensive browser testing
