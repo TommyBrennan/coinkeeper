@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
 import { db } from "@/lib/db";
+
+const patchNotificationSchema = z.object({
+  read: z.boolean({ message: "read must be a boolean" }),
+});
 
 /**
  * PATCH /api/notifications/[id] — update a notification (mark read/unread)
@@ -15,7 +20,23 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const body = await req.json().catch(() => ({}));
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON body" },
+      { status: 400 }
+    );
+  }
+
+  const parsed = patchNotificationSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Validation failed", details: parsed.error.issues },
+      { status: 400 }
+    );
+  }
 
   // Verify ownership
   const notification = await db.notification.findFirst({
@@ -28,9 +49,7 @@ export async function PATCH(
 
   const updated = await db.notification.update({
     where: { id },
-    data: {
-      ...(typeof body.read === "boolean" ? { read: body.read } : {}),
-    },
+    data: { read: parsed.data.read },
   });
 
   return NextResponse.json({ notification: updated });

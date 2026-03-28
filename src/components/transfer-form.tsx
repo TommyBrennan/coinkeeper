@@ -81,6 +81,7 @@ export function TransferForm() {
       }
     } catch {
       setAutoRate(null);
+      setError("Network error fetching exchange rate. Try manual rate instead.");
     } finally {
       setLoadingRate(false);
     }

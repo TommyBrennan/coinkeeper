@@ -19,8 +19,10 @@ export async function GET(req: NextRequest) {
   try {
     const url = req.nextUrl;
     const unreadOnly = url.searchParams.get("unreadOnly") === "true";
-    const limit = Math.min(Number(url.searchParams.get("limit")) || 50, 100);
-    const offset = Number(url.searchParams.get("offset")) || 0;
+    const rawLimit = Number(url.searchParams.get("limit")) || 50;
+    const rawOffset = Number(url.searchParams.get("offset")) || 0;
+    const limit = Math.max(1, Math.min(rawLimit, 100));
+    const offset = Math.max(0, rawOffset);
 
     const context = await getSpaceContext(user.id);
 
