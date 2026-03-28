@@ -21,7 +21,7 @@
 - Use `npx prisma generate` after schema changes
 - Build: `npm run build`, Lint: `npm run lint`
 - ARM64 Linux — no Chrome for Testing, no sudo access for apt install
-- Browser testing via agent-browser not available (no Chromium installed)
+- Browser testing via agent-browser IS available — use `agent-browser open/screenshot/click/type`
 - Next.js 16 route handlers: `params` is a Promise, must `await params` in dynamic routes
 - Auth: WebAuthn passkeys via @simplewebauthn v13, httpOnly cookie sessions
 - `requireUser()` uses Next.js `redirect()` — works in server components and route handlers
@@ -35,5 +35,8 @@
 - Web Push: VAPID keys stored in env vars (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT)
 - `.env*` gitignore pattern catches `.env.example` — can't commit env examples without `-f`
 - Zod v4 (^4.3.6) installed — uses `.issues` not `.errors`, enum second arg is string message not `{errorMap}`, `z.record(z.string(), z.unknown())` not `z.record(z.unknown())`
-- Docker rootless: `unshare --map-root-user --mount` can start containerd+dockerd with `--bridge=none`, but image extraction fails due to single-UID mapping (no multi-UID support without setuid-root newuidmap)
+- Docker rootless: can start daemon via `rootlesskit --net=host --copy-up=/run -- dockerd --storage-driver vfs --bridge=none`, but image builds fail due to single-UID namespace (lchown for GID 42 fails). No CAP_SETUID, no setuid-root newuidmap.
 - Docker deploy requires AGENT_NAME env var + either host Docker socket or DOCKER_HOST env var
+- Local deploy: use `scripts/local-deploy.sh` — dev on port 3000 (next dev), prod on port 8080 (standalone)
+- Standalone build needs static files copied: `cp -r .next/static .next/standalone/.next/static`
+- Disk space improved: ~17GB free (previously was ~500MB)
