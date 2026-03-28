@@ -94,5 +94,5 @@
 ## Next Session Priority
 1. Docker deployment (#81) — cb-deploy blocked on rootless Docker UID mapping
 2. Telegram delivery blocked on bot token (#66)
-3. Consider refactoring large components (reports-manager 1228 lines, receipt-upload-form 847 lines)
+3. Consider refactoring receipt-upload-form.tsx (847 lines) — reports-manager already refactored (#142, PR #143)
 4. Consider additional polish: e2e tests, more comprehensive browser testing
