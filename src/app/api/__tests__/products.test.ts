@@ -145,7 +145,7 @@ describe("/api/products", () => {
       mockProductModel.count.mockResolvedValue(0);
 
       const req = createRequest("http://localhost:3000/api/products?q=milk");
-      const res = await listProducts(req);
+      await listProducts(req);
 
       expect(mockProductModel.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -296,7 +296,7 @@ describe("/api/products", () => {
       const req = createRequest(
         "http://localhost:3000/api/products/prod-1/prices?merchant=Whole%20Foods"
       );
-      const res = await getProductPrices(req, {
+      await getProductPrices(req, {
         params: Promise.resolve({ id: "prod-1" }),
       });
 

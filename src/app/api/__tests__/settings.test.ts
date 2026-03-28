@@ -61,7 +61,7 @@ describe("/api/settings", () => {
         baseCurrency: "EUR",
       });
 
-      const req = createRequest("http://localhost:3000/api/settings");
+      createRequest("http://localhost:3000/api/settings");
       const res = await GET();
       const { status, data } = await parseResponse(res);
 
