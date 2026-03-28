@@ -7,11 +7,11 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await requireUser();
+  const user = await requireUser();
   const { id } = await params;
 
   const receipt = await db.receipt.findUnique({
-    where: { id },
+    where: { id, userId: user.id },
     include: {
       transactions: {
         select: {
@@ -55,10 +55,10 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await requireUser();
+  const user = await requireUser();
   const { id } = await params;
 
-  const receipt = await db.receipt.findUnique({ where: { id } });
+  const receipt = await db.receipt.findUnique({ where: { id, userId: user.id } });
   if (!receipt) {
     return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
   }
@@ -69,7 +69,7 @@ export async function DELETE(
     data: { receiptId: null },
   });
 
-  await db.receipt.delete({ where: { id } });
+  await db.receipt.delete({ where: { id, userId: user.id } });
 
   return NextResponse.json({ success: true });
 }

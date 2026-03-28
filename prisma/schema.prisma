@@ -25,6 +25,7 @@ model User {
   sessions           Session[]
   scheduledTransfers ScheduledTransfer[]
 
+  receipts           Receipt[]
   spaceMemberships SpaceMember[]
   telegramLink     TelegramLink?
   telegramLinkCodes TelegramLinkCode[]
@@ -156,6 +157,7 @@ model Transaction {
 
 model Receipt {
   id          String   @id @default(cuid())
+  userId      String
   imagePath   String
   merchant    String?
   total       Float?
@@ -165,8 +167,11 @@ model Receipt {
   processedAt DateTime?
   createdAt   DateTime @default(now())
 
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions  Transaction[]
   productPrices ProductPrice[]
+
+  @@index([userId])
 }
 
 // ─── Products & Price Tracking ──────────────────────────────────────

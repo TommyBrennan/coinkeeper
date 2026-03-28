@@ -22,13 +22,11 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Get all receipts that have parsedData, linked to the user via transactions
+  // Get all receipts that have parsedData, owned by the current user
   const receipts = await db.receipt.findMany({
     where: {
+      userId: user.id,
       parsedData: { not: null },
-      transactions: {
-        some: { userId: user.id },
-      },
     },
     select: {
       id: true,

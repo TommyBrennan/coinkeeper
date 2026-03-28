@@ -971,6 +971,7 @@ function registerHandlers(bot: Bot) {
       // Store receipt in database
       const receipt = await db.receipt.create({
         data: {
+          userId: user.id,
           imagePath: `telegram://${photo.file_id}`,
           merchant: parsed.merchant,
           total: parsed.total,
