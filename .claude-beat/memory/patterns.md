@@ -35,8 +35,13 @@
 - Web Push: VAPID keys stored in env vars (VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT)
 - `.env*` gitignore pattern catches `.env.example` — can't commit env examples without `-f`
 - Zod v4 (^4.3.6) installed — uses `.issues` not `.errors`, enum second arg is string message not `{errorMap}`, `z.record(z.string(), z.unknown())` not `z.record(z.unknown())`
-- Docker rootless: can start daemon via `rootlesskit --net=host --copy-up=/run -- dockerd --storage-driver vfs --bridge=none`, but image builds fail due to single-UID namespace (lchown for GID 42 fails). No CAP_SETUID, no setuid-root newuidmap.
-- Docker deploy requires AGENT_NAME env var + either host Docker socket or DOCKER_HOST env var
+- Docker rootless solved: daemon starts via `rootlesskit --net=host --copy-up=/run dockerd --storage-driver vfs --bridge=none --iptables=false --default-runtime=crun-wrapper --add-runtime=crun-wrapper=/home/claude-beat/bin/crun-wrapper`
+- Docker image build: `docker build` fails (GID 42 in base images), workaround: build locally + `docker import` with `tar --owner=0 --group=0`
+- Docker container runtime: `crun` 1.19.1 replaces `runc`, `crun-wrapper` strips proc/devpts/sysfs/cgroup mounts from OCI spec
+- Docker containers: start and run correctly, but CANNOT serve network traffic (no iptables, no TAP devices in nested container)
+- Docker deploy requires AGENT_NAME env var + either DOCKER_HOST or `--cap-add=NET_ADMIN` on outer container
+- `scripts/docker-rootless-deploy.sh` — builds Docker image via local build + `docker import`
+- newuidmap/newgidmap at `/home/claude-beat/bin/` — single-UID mapping wrappers (write deny to setgroups first for gidmap)
 - API routes must use `requireApiUser()` (returns `{ user, error }` for JSON 401), NOT `requireUser()` (uses redirect)
 - When changing auth patterns in routes, also update test mocks in `src/app/api/__tests__/`
 - Local deploy: use `scripts/local-deploy.sh` — dev on port 3000 (next dev), prod on port 8080 (standalone)
