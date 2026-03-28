@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
 import { calculateNextExecution } from "@/lib/schedule";
 import { parseJsonBody } from "@/lib/api-utils";
 
@@ -9,7 +9,10 @@ type RouteContext = { params: Promise<{ id: string }> };
 // ─── GET /api/scheduled-transfers/[id] ──────────────────────────────
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await context.params;
 
   const schedule = await db.scheduledTransfer.findFirst({
@@ -37,7 +40,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
 // ─── PATCH /api/scheduled-transfers/[id] ────────────────────────────
 
 export async function PATCH(request: NextRequest, context: RouteContext) {
-  const user = await requireUser();
+  const { user, error: authError } = await requireApiUser();
+  if (authError) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await context.params;
   const { data: body, error: parseError } = await parseJsonBody(request);
   if (parseError) return parseError;
@@ -171,7 +177,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 // ─── DELETE /api/scheduled-transfers/[id] ───────────────────────────
 
 export async function DELETE(request: NextRequest, context: RouteContext) {
-  const user = await requireUser();
+  const { user, error: delAuthError } = await requireApiUser();
+  if (delAuthError) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { id } = await context.params;
 
   const existing = await db.scheduledTransfer.findFirst({

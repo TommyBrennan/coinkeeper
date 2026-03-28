@@ -37,7 +37,7 @@ const { mockUser, mockScheduledTransferModel, mockAccountModel } = vi.hoisted(
 );
 
 vi.mock("@/lib/auth", () => ({
-  requireUser: vi.fn().mockResolvedValue(mockUser),
+  requireApiUser: vi.fn().mockResolvedValue({ user: mockUser, error: false }),
 }));
 
 vi.mock("@/lib/schedule", () => ({

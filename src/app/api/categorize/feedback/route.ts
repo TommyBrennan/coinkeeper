@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/api-utils";
 
 // POST /api/categorize/feedback — store user correction of AI suggestion
 export async function POST(request: NextRequest) {
-  const user = await requireUser();
+  const { user, error } = await requireApiUser();
+  if (error) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { data: body, error: parseError } = await parseJsonBody(request);
   if (parseError) return parseError;
 

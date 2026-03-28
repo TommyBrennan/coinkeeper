@@ -50,7 +50,9 @@ export async function POST() {
     let parsed: ParsedData;
     try {
       parsed = JSON.parse(receipt.parsedData!) as ParsedData;
-    } catch {
+    } catch (err) {
+      console.error(`Invalid parsedData JSON in receipt ${receipt.id}:`, err);
+      skipped++;
       continue;
     }
 
