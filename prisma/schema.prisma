@@ -147,6 +147,7 @@ model Transaction {
   recurring   RecurringRule?    @relation(fields: [recurringId], references: [id])
 
   @@index([userId])
+  @@index([userId, date])
   @@index([categoryId])
   @@index([fromAccountId])
   @@index([toAccountId])
@@ -172,6 +173,7 @@ model Receipt {
   productPrices ProductPrice[]
 
   @@index([userId])
+  @@index([userId, createdAt])
 }
 
 // ─── Products & Price Tracking ──────────────────────────────────────
@@ -205,6 +207,7 @@ model ProductPrice {
   receipt Receipt? @relation(fields: [receiptId], references: [id], onDelete: SetNull)
 
   @@index([productId])
+  @@index([productId, date])
   @@index([date])
   @@index([receiptId])
 }
@@ -222,6 +225,8 @@ model RecurringRule {
   createdAt      DateTime @default(now())
 
   transactions Transaction[]
+
+  @@index([isActive, nextExecution])
 }
 
 // ─── Scheduled Transfers ────────────────────────────────────────
