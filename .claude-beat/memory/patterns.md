@@ -47,3 +47,7 @@
 - Local deploy: use `scripts/local-deploy.sh` — dev on port 3000 (next dev), prod on port 8080 (standalone)
 - Standalone build needs static files copied: `cp -r .next/static .next/standalone/.next/static`
 - Disk space improved: ~17GB free (previously was ~500MB)
+- otplib v4 API: no `authenticator` object — use direct imports: `generateSecret`, `generateSync`, `verifySync`, `generateURI`
+- otplib `generateURI`: no `type` parameter — just `{ secret, issuer, label }`
+- otplib `verifySync` returns `{ valid: boolean, delta: number }`, not a boolean
+- Docker daemon needs `XDG_RUNTIME_DIR=/tmp/run-1000` to start; zombie processes from prior sessions need `kill -9`
