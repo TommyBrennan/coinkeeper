@@ -11,8 +11,10 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q") || "";
-  const limit = Math.min(parseInt(searchParams.get("limit") || "50"), 200);
-  const offset = parseInt(searchParams.get("offset") || "0");
+  const rawLimit = parseInt(searchParams.get("limit") || "50");
+  const rawOffset = parseInt(searchParams.get("offset") || "0");
+  const limit = Math.max(1, Math.min(isNaN(rawLimit) ? 50 : rawLimit, 200));
+  const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
 
   const where: Record<string, unknown> = {
     userId: user.id,

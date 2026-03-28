@@ -27,8 +27,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { searchParams } = new URL(request.url);
-  const limit = parseInt(searchParams.get("limit") || "20", 10);
-  const offset = parseInt(searchParams.get("offset") || "0", 10);
+  const rawLimit = parseInt(searchParams.get("limit") || "20", 10);
+  const rawOffset = parseInt(searchParams.get("offset") || "0", 10);
+  const limit = Math.max(1, Math.min(isNaN(rawLimit) ? 20 : rawLimit, 100));
+  const offset = Math.max(0, isNaN(rawOffset) ? 0 : rawOffset);
 
   const where = { userId: user.id };
 

@@ -288,6 +288,41 @@ describe("PATCH /api/notifications/[id] — update notification", () => {
     expect(status).toBe(404);
   });
 
+  it("returns 400 for invalid body (missing read field)", async () => {
+    const req = createRequest(
+      "http://localhost:3000/api/notifications/notif-1",
+      {
+        method: "PATCH",
+        body: { foo: "bar" },
+      }
+    );
+    const res = await PATCH_BY_ID(req, {
+      params: Promise.resolve({ id: "notif-1" }),
+    });
+    const { status, data } = await parseResponse(res);
+
+    expect(status).toBe(400);
+    expect(data).toHaveProperty("error", "Validation failed");
+    expect(data).toHaveProperty("details");
+  });
+
+  it("returns 400 for invalid body (read is not boolean)", async () => {
+    const req = createRequest(
+      "http://localhost:3000/api/notifications/notif-1",
+      {
+        method: "PATCH",
+        body: { read: "yes" },
+      }
+    );
+    const res = await PATCH_BY_ID(req, {
+      params: Promise.resolve({ id: "notif-1" }),
+    });
+    const { status, data } = await parseResponse(res);
+
+    expect(status).toBe(400);
+    expect(data).toHaveProperty("error", "Validation failed");
+  });
+
   it("returns 401 when not authenticated", async () => {
     vi.mocked(requireApiUser).mockResolvedValue({
       user: null,

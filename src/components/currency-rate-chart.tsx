@@ -53,10 +53,12 @@ export function CurrencyRateChart({
   const [days, setDays] = useState(30);
   const [data, setData] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
     if (from === to) return;
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(
         `/api/exchange-rates/history?from=${from}&to=${to}&days=${days}`
@@ -64,9 +66,13 @@ export function CurrencyRateChart({
       if (res.ok) {
         const json: HistoryResponse = await res.json();
         setData(json);
+      } else {
+        setError("Failed to fetch exchange rate data. Please try again.");
+        setData(null);
       }
     } catch {
-      // Silently handle
+      setError("Network error. Check your connection and try again.");
+      setData(null);
     } finally {
       setLoading(false);
     }
@@ -170,6 +176,21 @@ export function CurrencyRateChart({
           <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
         )}
       </div>
+
+      {/* Error display */}
+      {error && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+            <button
+              onClick={fetchHistory}
+              className="ml-3 shrink-0 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200 underline"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Current rate display */}
       {from === to ? (
