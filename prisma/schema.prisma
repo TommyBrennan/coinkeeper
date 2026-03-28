@@ -15,6 +15,9 @@ model User {
   email        String   @unique
   reminderDays Int?     // days without transactions before reminder (null = disabled)
   baseCurrency String   @default("USD") // preferred base currency for net worth display
+  totpSecret      String?  // TOTP secret key (base32 encoded)
+  totpEnabled     Boolean  @default(false) // whether TOTP 2FA is active
+  totpBackupCodes String?  // JSON array of hashed backup codes
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
