@@ -41,9 +41,10 @@
 - None
 
 ## Testing
-- Vitest with 224 tests (unit + API integration)
+- Vitest with 341 tests (unit + API integration)
 - API tests use `vi.hoisted()` + `vi.mock()` pattern for mocked Prisma, auth, space-context
 - Test helpers in `src/app/api/__tests__/helpers.ts`
+- 20 test files covering: accounts, transactions, health, exchange-rate, analytics, spaces, space-members, categories, scheduled-transfers, receipts, notifications, push
 
 ## Deployment
 - Local deploy script: `scripts/deploy-local.sh` (dev on :3000, prod on :8080)
@@ -94,5 +95,5 @@
 ## Next Session Priority
 1. Docker deployment (#81) — cb-deploy blocked on rootless Docker UID mapping
 2. Telegram delivery blocked on bot token (#66)
-3. Consider refactoring receipt-upload-form.tsx (847 lines) — reports-manager already refactored (#142, PR #143)
+3. Expand test coverage — untested routes include: auth, settings, reports, products, insights, net-worth, import/export, categorize, telegram
 4. Consider additional polish: e2e tests, more comprehensive browser testing
