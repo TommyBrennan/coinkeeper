@@ -18,10 +18,10 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  await requireUser();
+  const user = await requireUser();
   const { id } = await params;
 
-  const receipt = await db.receipt.findUnique({ where: { id } });
+  const receipt = await db.receipt.findUnique({ where: { id, userId: user.id } });
   if (!receipt) {
     return NextResponse.json({ error: "Receipt not found" }, { status: 404 });
   }

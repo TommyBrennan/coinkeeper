@@ -20,15 +20,18 @@ function isAllowedType(type: string): type is AllowedMimeType {
   return ALLOWED_TYPES.includes(type as AllowedMimeType);
 }
 
-// GET /api/receipts — list receipts
+// GET /api/receipts — list receipts for current user
 export async function GET(request: NextRequest) {
-  await requireUser();
+  const user = await requireUser();
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get("limit") || "20", 10);
   const offset = parseInt(searchParams.get("offset") || "0", 10);
 
+  const where = { userId: user.id };
+
   const [receipts, total] = await Promise.all([
     db.receipt.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       take: limit,
       skip: offset,
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
         },
       },
     }),
-    db.receipt.count(),
+    db.receipt.count({ where }),
   ]);
 
   return NextResponse.json({ receipts, total });
@@ -51,7 +54,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/receipts — upload receipt image and optionally parse with AI
 export async function POST(request: NextRequest) {
-  await requireUser();
+  const user = await requireUser();
 
   const contentType = request.headers.get("content-type") || "";
   if (!contentType.includes("multipart/form-data")) {
@@ -125,6 +128,7 @@ export async function POST(request: NextRequest) {
   // Create receipt record
   const receipt = await db.receipt.create({
     data: {
+      userId: user.id,
       imagePath: publicPath,
       merchant: parsedData?.merchant || null,
       total: parsedData?.total || null,
