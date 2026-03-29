@@ -32,19 +32,20 @@
 - Settings page: profile, Telegram link, notification settings, 2FA management (enable/disable/backup codes)
 - Settings API: GET/PATCH /api/settings for user preferences
 - Nav has Transactions, Income, Transfer, Schedules, Receipts, Accounts, Prices, Currencies, Analytics, Insights, Reports, Categories, Spaces, Settings
+- Audit log: AuditLog model, logAuditEvent helper, GET /api/audit-log, AuditLogViewer in settings
 - Error handling: error boundaries, loading skeletons, 404 page (PR #114)
 - Health check endpoint: /api/health (PR #112) — accessible without auth (middleware fix PR #119)
 - Local deployment: scripts/deploy-local.sh (dev :3000, prod :8080)
 - Build passes, lint passes
 
 ## Open PRs
-- None
+- #163: Audit log (auto-merge enabled)
 
 ## Testing
-- Vitest with 459 tests (unit + API integration)
+- Vitest with 471 tests (unit + API integration)
 - API tests use `vi.hoisted()` + `vi.mock()` pattern for mocked Prisma, auth, space-context
 - Test helpers in `src/app/api/__tests__/helpers.ts`
-- 23 test files covering: accounts, transactions, health, exchange-rate, analytics, spaces, space-members, categories, scheduled-transfers, receipts, notifications, push, settings, products, net-worth
+- 24 test files covering: accounts, transactions, health, exchange-rate, analytics, spaces, space-members, categories, scheduled-transfers, receipts, notifications, push, settings, products, net-worth, audit-log
 
 ## Deployment
 - Local deploy script: `scripts/deploy-local.sh` (dev on :3000, prod on :8080)
@@ -55,7 +56,6 @@
 
 ## Open Issues — P0
 - #81: Deploy — cb-deploy still blocked on container capabilities, local deploy working (PR #119 merged)
-- #155: Audit log for security-sensitive actions
 - #66: Bot token needed (needs-human, blocked)
 
 ## Open Issues — P1
@@ -94,8 +94,8 @@
 - #140: Consistent API error handling — requireApiUser + try-catch (PR #141)
 
 ## Next Session Priority
-1. Docker deployment (#81) — cb-deploy blocked on AGENT_NAME + DOCKER_HOST
-2. Audit log for security-sensitive actions (#155, P0)
+1. Merge PR #163 (audit log) if passed
+2. Docker deployment (#81) — cb-deploy blocked on AGENT_NAME + DOCKER_HOST
 3. Recurring income auto-execution (#156, P1)
 4. Telegram delivery blocked on bot token (#66)
 5. Expand test coverage — untested routes include: reports, insights, import/export, categorize, telegram, transactions/[id], space-context
