@@ -4,6 +4,7 @@ import { getTelegramLinkStatus } from "@/lib/telegram";
 import { NotificationSettings } from "@/components/notification-settings";
 import { BaseCurrencySettings } from "@/components/base-currency-settings";
 import { TwoFactorSettings } from "@/components/two-factor-settings";
+import { AuditLogViewer } from "@/components/audit-log-viewer";
 import { db } from "@/lib/db";
 
 export default async function SettingsPage() {
@@ -52,6 +53,9 @@ export default async function SettingsPage() {
         <NotificationSettings
           initialReminderDays={fullUser?.reminderDays ?? null}
         />
+
+        {/* Security Audit Log */}
+        <AuditLogViewer />
 
         {/* Telegram section */}
         <TelegramLinkCard

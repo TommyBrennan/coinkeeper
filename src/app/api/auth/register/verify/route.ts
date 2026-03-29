@@ -3,6 +3,7 @@ import { verifyRegistrationResponse } from "@simplewebauthn/server";
 import { db } from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { getWebAuthnConfig } from "@/lib/webauthn";
+import { logAuditEvent } from "@/lib/audit";
 
 /**
  * POST /api/auth/register/verify
@@ -70,6 +71,9 @@ export async function POST(req: NextRequest) {
 
     // Create session
     await createSession(user.id);
+
+    // Audit: registration
+    logAuditEvent("register", user.id, { email: userData.email }, req);
 
     // Clear registration cookies
     const response = NextResponse.json({ success: true, userId: user.id });

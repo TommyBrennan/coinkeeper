@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { verifyTotpToken, generateBackupCodes } from "@/lib/totp";
+import { logAuditEvent } from "@/lib/audit";
 
 /**
  * POST /api/auth/totp/enable
@@ -75,6 +76,9 @@ export async function POST(request: NextRequest) {
         totpBackupCodes: JSON.stringify(hashedBackupCodes),
       },
     });
+
+    // Audit: TOTP enabled
+    logAuditEvent("totp_enabled", user.id, null, request);
 
     return NextResponse.json({
       enabled: true,

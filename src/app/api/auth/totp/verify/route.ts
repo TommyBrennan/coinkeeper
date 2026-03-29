@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { verifyTotpToken, verifyBackupCode } from "@/lib/totp";
+import { logAuditEvent } from "@/lib/audit";
 
 const PENDING_2FA_COOKIE = "ck_pending_2fa";
 
@@ -80,6 +81,9 @@ export async function POST(req: NextRequest) {
       // TOTP code valid — create full session
       await createSession(user.id);
 
+      // Audit: login via TOTP
+      logAuditEvent("login", user.id, { method: "totp" }, req);
+
       const response = NextResponse.json({ success: true });
       response.cookies.delete(PENDING_2FA_COOKIE);
       return response;
@@ -106,6 +110,9 @@ export async function POST(req: NextRequest) {
           });
 
           await createSession(user.id);
+
+          // Audit: login via backup code
+          logAuditEvent("login", user.id, { method: "backup_code", backupCodesRemaining: hashedCodes.length }, req);
 
           const response = NextResponse.json({
             success: true,

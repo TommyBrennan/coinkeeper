@@ -11,6 +11,7 @@ const {
   mockUserModel,
   mockCredentialModel,
   mockSessionModel,
+  mockAuditLogModel,
   mockDestroySession,
   mockCreateSession,
   mockGenerateRegistrationOptions,
@@ -18,6 +19,8 @@ const {
   mockGenerateAuthenticationOptions,
   mockVerifyAuthenticationResponse,
   mockDbTransaction,
+  mockRequireApiUser,
+  mockLogAuditEvent,
 } = vi.hoisted(() => {
   const createModel = () => ({
     findMany: vi.fn().mockResolvedValue([]),
@@ -34,8 +37,11 @@ const {
     mockUserModel: createModel(),
     mockCredentialModel: createModel(),
     mockSessionModel: createModel(),
+    mockAuditLogModel: createModel(),
     mockDestroySession: vi.fn().mockResolvedValue(undefined),
     mockCreateSession: vi.fn().mockResolvedValue("session-token-123"),
+    mockRequireApiUser: vi.fn().mockResolvedValue({ user: { id: "user-1", name: "Test", email: "test@example.com" }, error: false }),
+    mockLogAuditEvent: vi.fn().mockResolvedValue(undefined),
     mockGenerateRegistrationOptions: vi.fn().mockResolvedValue({
       challenge: "test-challenge-abc",
       rp: { name: "CoinKeeper", id: "localhost" },
@@ -72,6 +78,14 @@ vi.mock("@/lib/session", () => ({
   createSession: mockCreateSession,
 }));
 
+vi.mock("@/lib/auth", () => ({
+  requireApiUser: mockRequireApiUser,
+}));
+
+vi.mock("@/lib/audit", () => ({
+  logAuditEvent: mockLogAuditEvent,
+}));
+
 vi.mock("@/lib/webauthn", () => ({
   getWebAuthnConfig: () => ({
     rpName: "CoinKeeper",
@@ -92,6 +106,7 @@ vi.mock("@/lib/db", () => ({
     user: mockUserModel,
     credential: mockCredentialModel,
     session: mockSessionModel,
+    auditLog: mockAuditLogModel,
     $transaction: mockDbTransaction,
   },
 }));
@@ -112,7 +127,8 @@ describe("POST /api/auth/logout", () => {
   });
 
   it("destroys the session and returns success", async () => {
-    const res = await logoutPOST();
+    const req = createRequest("POST", "/api/auth/logout");
+    const res = await logoutPOST(req);
     const { status, data } = await parseResponse(res);
 
     expect(status).toBe(200);
@@ -123,7 +139,8 @@ describe("POST /api/auth/logout", () => {
   it("returns 500 if session destruction fails", async () => {
     mockDestroySession.mockRejectedValueOnce(new Error("DB error"));
 
-    const res = await logoutPOST();
+    const req = createRequest("POST", "/api/auth/logout");
+    const res = await logoutPOST(req);
     const { status, data } = await parseResponse<{ error: string }>(res);
 
     expect(status).toBe(500);
