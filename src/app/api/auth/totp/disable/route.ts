@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { verifyTotpToken } from "@/lib/totp";
+import { logAuditEvent } from "@/lib/audit";
 
 /**
  * POST /api/auth/totp/disable
@@ -64,6 +65,9 @@ export async function POST(request: NextRequest) {
         totpBackupCodes: null,
       },
     });
+
+    // Audit: TOTP disabled
+    logAuditEvent("totp_disabled", user.id, null, request);
 
     return NextResponse.json({
       disabled: true,

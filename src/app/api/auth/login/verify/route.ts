@@ -3,6 +3,7 @@ import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { db } from "@/lib/db";
 import { createSession } from "@/lib/session";
 import { getWebAuthnConfig } from "@/lib/webauthn";
+import { logAuditEvent } from "@/lib/audit";
 import crypto from "crypto";
 
 const PENDING_2FA_COOKIE = "ck_pending_2fa";
@@ -118,6 +119,9 @@ export async function POST(req: NextRequest) {
 
     // No 2FA — create full session
     await createSession(userId);
+
+    // Audit: login success
+    logAuditEvent("login", userId, null, req);
 
     // Clear auth cookies
     const successResponse = NextResponse.json({ success: true });

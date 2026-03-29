@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { parseJsonBody } from "@/lib/api-utils";
+import { logAuditEvent } from "@/lib/audit";
 
 type RouteParams = { params: Promise<{ id: string; memberId: string }> };
 
@@ -63,6 +64,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
   }
 
+  const previousRole = targetMember.role;
   const updated = await db.spaceMember.update({
     where: { id: memberId },
     data: { role },
@@ -70,6 +72,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       user: { select: { id: true, name: true, email: true } },
     },
   });
+
+  // Audit: role changed
+  logAuditEvent("space_member_role_changed", user.id, {
+    spaceId,
+    memberId,
+    targetUserId: targetMember.userId,
+    previousRole,
+    newRole: role,
+  }, request);
 
   return NextResponse.json(updated);
 }
@@ -122,6 +133,13 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams) {
   }
 
   await db.spaceMember.delete({ where: { id: memberId } });
+
+  // Audit: member removed
+  logAuditEvent("space_member_removed", user.id, {
+    spaceId,
+    memberId,
+    targetUserId: targetMember.userId,
+  }, _request);
 
   return NextResponse.json({ success: true });
 }

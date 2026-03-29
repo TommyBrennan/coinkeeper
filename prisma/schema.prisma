@@ -37,6 +37,7 @@ model User {
   pushSubscriptions PushSubscription[]
   savedReports     SavedReport[]
   generatedReports GeneratedReport[]
+  auditLogs        AuditLog[]
 }
 
 // ─── WebAuthn Credentials ────────────────────────────────────────────
@@ -413,6 +414,23 @@ model GeneratedReport {
   @@index([reportId])
   @@index([userId])
   @@index([expiresAt])
+}
+
+// ─── Audit Log ─────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?  // null for failed login attempts
+  action    String   // login, login_failed, logout, register, totp_enabled, totp_disabled, totp_backup_regenerated, passkey_added, space_member_added, space_member_removed, space_member_role_changed
+  metadata  String?  // JSON: extra context (email, spaceId, memberId, etc.)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 // ─── Exchange Rate History ──────────────────────────────────────────

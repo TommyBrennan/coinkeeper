@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireApiUser } from "@/lib/auth";
 import { parseAndValidateBody } from "@/lib/api-utils";
 import { inviteMemberSchema } from "@/lib/validations";
+import { logAuditEvent } from "@/lib/audit";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -73,6 +74,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       user: { select: { id: true, name: true, email: true } },
     },
   });
+
+  // Audit: member added to space
+  logAuditEvent("space_member_added", user.id, {
+    spaceId,
+    inviteeEmail: email,
+    inviteeId: invitee.id,
+    role: assignRole,
+  }, request);
 
   return NextResponse.json(member, { status: 201 });
 }
