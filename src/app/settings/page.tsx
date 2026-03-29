@@ -3,6 +3,7 @@ import { TelegramLinkCard } from "@/components/telegram-link-card";
 import { getTelegramLinkStatus } from "@/lib/telegram";
 import { NotificationSettings } from "@/components/notification-settings";
 import { BaseCurrencySettings } from "@/components/base-currency-settings";
+import { TwoFactorSettings } from "@/components/two-factor-settings";
 import { db } from "@/lib/db";
 
 export default async function SettingsPage() {
@@ -43,6 +44,9 @@ export default async function SettingsPage() {
         <BaseCurrencySettings
           initialBaseCurrency={fullUser?.baseCurrency ?? "USD"}
         />
+
+        {/* Two-Factor Authentication */}
+        <TwoFactorSettings />
 
         {/* Notifications section */}
         <NotificationSettings
