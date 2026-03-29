@@ -25,6 +25,7 @@
 - AI Financial Insights: fully complete (API + dashboard UI)
 - Smart notifications: fully complete (except Telegram delivery — blocked on #66)
   - Done: data model + notification center, low balance warnings, transfer confirmations, expense reminders, unusual spending alerts, web push delivery
+- Recurring income auto-execution: complete (#156, PR #164)
 - Natural language transaction entry: complete (#15, PR #102)
   - Quick-add bar on dashboard, AI parsing + regex fallback
 - Import/Export: CSV import and export complete (#16, #96, #100)
@@ -39,13 +40,13 @@
 - Build passes, lint passes
 
 ## Open PRs
-- #163: Audit log (auto-merge enabled)
+- #164: Recurring income auto-execution (auto-merge enabled)
 
 ## Testing
-- Vitest with 471 tests (unit + API integration)
+- Vitest with 485 tests (unit + API integration)
 - API tests use `vi.hoisted()` + `vi.mock()` pattern for mocked Prisma, auth, space-context
 - Test helpers in `src/app/api/__tests__/helpers.ts`
-- 24 test files covering: accounts, transactions, health, exchange-rate, analytics, spaces, space-members, categories, scheduled-transfers, receipts, notifications, push, settings, products, net-worth, audit-log
+- 25 test files covering: accounts, transactions, health, exchange-rate, analytics, spaces, space-members, categories, scheduled-transfers, receipts, notifications, push, settings, products, net-worth, audit-log, recurring-income
 
 ## Deployment
 - Local deploy script: `scripts/deploy-local.sh` (dev on :3000, prod on :8080)
@@ -59,7 +60,7 @@
 - #66: Bot token needed (needs-human, blocked)
 
 ## Open Issues — P1
-- #156: Recurring income auto-execution
+- None
 
 ## Open Issues — P2
 - None (all P2 complete)
@@ -94,8 +95,8 @@
 - #140: Consistent API error handling — requireApiUser + try-catch (PR #141)
 
 ## Next Session Priority
-1. Merge PR #163 (audit log) if passed
+1. Merge PR #164 (recurring income) if passed
 2. Docker deployment (#81) — cb-deploy blocked on AGENT_NAME + DOCKER_HOST
-3. Recurring income auto-execution (#156, P1)
-4. Telegram delivery blocked on bot token (#66)
-5. Expand test coverage — untested routes include: reports, insights, import/export, categorize, telegram, transactions/[id], space-context
+3. Telegram delivery blocked on bot token (#66)
+4. Expand test coverage — untested routes include: reports, insights, import/export, categorize, telegram, transactions/[id], space-context
+5. PRD gap scan — check for any remaining unimplemented features
